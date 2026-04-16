@@ -3,6 +3,11 @@ export interface ProductVariant {
   price: number
 }
 
+export interface ProductAddon {
+  label: string   // e.g. "紅豆", "芋頭", "芝麻"
+  price: number   // additional cost
+}
+
 export interface Product {
   id: string
   name: string
@@ -12,6 +17,7 @@ export interface Product {
   bgColor: string
   icon: string
   variants?: ProductVariant[]
+  addons?: ProductAddon[]
 }
 
 export const categories = [
@@ -103,9 +109,14 @@ export const seedProducts: Omit<Product, 'id'>[] = [
   { name: '紅豆/黑芝麻手撕', description: '多口味：紅豆、黑芝麻、芋泥或蔓果', price: 120, category: '手撕麵包', bgColor: '#FFF1F2', icon: '🍞',
     variants: [{ label: '9顆', price: 120 }, { label: '12顆', price: 160 }] },
   // ── 包子饅頭 ──
-  { name: '白饅頭', description: '傳統白饅頭，鬆軟Q彈，可加紅豆/芋頭/芝麻餡（+$10），每顆', price: 10, category: '包子饅頭', bgColor: '#F5F5F4', icon: '🥟' },
-  { name: '全麥饅頭', description: '全麥製作饅頭，高纖健康，可加內餡（+$10），每顆', price: 10, category: '包子饅頭', bgColor: '#E7E5E4', icon: '🥟' },
-  { name: '黑芝麻饅頭', description: '黑芝麻風味饅頭，香氣濃郁，可加內餡（+$10），每顆', price: 15, category: '包子饅頭', bgColor: '#F5F5F4', icon: '🥟' },
-  { name: '黑米米饅頭', description: '黑米製作饅頭，色澤深紫，可加內餡（+$10），每顆', price: 15, category: '包子饅頭', bgColor: '#F5F5F4', icon: '🥟' },
-  { name: '糙米黑米米饅頭', description: '糙米與黑米結合，雙重穀物，可加內餡（+$10），每顆', price: 15, category: '包子饅頭', bgColor: '#E7E5E4', icon: '🥟' },
+  { name: '白饅頭', description: '傳統白饅頭，鬆軟Q彈，每顆', price: 10, category: '包子饅頭', bgColor: '#F5F5F4', icon: '🥟',
+    addons: [{ label: '紅豆', price: 10 }, { label: '芋頭', price: 10 }, { label: '芝麻', price: 10 }] },
+  { name: '全麥饅頭', description: '全麥製作，高纖健康，每顆', price: 10, category: '包子饅頭', bgColor: '#E7E5E4', icon: '🥟',
+    addons: [{ label: '紅豆', price: 10 }, { label: '芋頭', price: 10 }, { label: '芝麻', price: 10 }] },
+  { name: '黑芝麻饅頭', description: '黑芝麻風味，香氣濃郁，每顆', price: 15, category: '包子饅頭', bgColor: '#F5F5F4', icon: '🥟',
+    addons: [{ label: '紅豆', price: 10 }, { label: '芋頭', price: 10 }, { label: '芝麻', price: 10 }] },
+  { name: '黑米米饅頭', description: '黑米製作，色澤深紫，每顆', price: 15, category: '包子饅頭', bgColor: '#F5F5F4', icon: '🥟',
+    addons: [{ label: '紅豆', price: 10 }, { label: '芋頭', price: 10 }, { label: '芝麻', price: 10 }] },
+  { name: '糙米黑米米饅頭', description: '糙米與黑米結合，雙重穀物，每顆', price: 15, category: '包子饅頭', bgColor: '#E7E5E4', icon: '🥟',
+    addons: [{ label: '紅豆', price: 10 }, { label: '芋頭', price: 10 }, { label: '芝麻', price: 10 }] },
 ]

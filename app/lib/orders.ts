@@ -5,8 +5,10 @@ import {
   updateDoc,
   deleteDoc,
   query,
+  where,
   orderBy,
   onSnapshot,
+  getDocs,
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore'
@@ -35,12 +37,17 @@ export async function saveOrder(data: {
   items: CartItem[]
   totalPrice: number
 }) {
-  const orderItems = data.items.map(i => ({
-    productId: i.product.id,
-    name: i.variant ? `${i.product.name}（${i.variant.label}）` : i.product.name,
-    price: i.variant?.price ?? i.product.price,
-    quantity: i.quantity,
-  }))
+  const orderItems = data.items.map(i => {
+    const parts = [i.product.name]
+    if (i.variant) parts.push(`（${i.variant.label}）`)
+    if (i.addon) parts.push(`加${i.addon.label}`)
+    return {
+      productId: i.product.id,
+      name: parts.join(''),
+      price: (i.variant?.price ?? i.product.price) + (i.addon?.price ?? 0),
+      quantity: i.quantity,
+    }
+  })
 
   await addDoc(collection(db, 'orders'), {
     name: data.name,
@@ -60,6 +67,13 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
 
 export async function deleteOrder(orderId: string) {
   await deleteDoc(doc(db, 'orders', orderId))
+}
+
+export async function getOrdersByPhone(phone: string): Promise<Order[]> {
+  const q = query(collection(db, 'orders'), where('phone', '==', phone.trim()))
+  const snapshot = await getDocs(q)
+  const orders = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Order[]
+  return orders.sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0))
 }
 
 export function subscribeOrders(callback: (orders: Order[]) => void) {

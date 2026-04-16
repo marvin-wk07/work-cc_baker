@@ -39,11 +39,12 @@ const DEFAULT_COLORS = [
 ]
 
 type VariantInput = { label: string; price: string }
+type AddonInput  = { label: string; price: string }
 type FormData = {
   name: string; description: string; price: string; category: string
-  icon: string; bgColor: string; variants: VariantInput[]
+  icon: string; bgColor: string; variants: VariantInput[]; addons: AddonInput[]
 }
-const EMPTY_FORM: FormData = { name: '', description: '', price: '', category: '歐式麵包', icon: '🍞', bgColor: '#FEF3C7', variants: [] }
+const EMPTY_FORM: FormData = { name: '', description: '', price: '', category: '歐式麵包', icon: '🍞', bgColor: '#FEF3C7', variants: [], addons: [] }
 
 // ── Login ────────────────────────────────────────────────────
 
@@ -235,15 +236,17 @@ function ProductForm({
 
   const addVariant = () =>
     setForm(prev => ({ ...prev, variants: [...prev.variants, { label: '', price: '' }] }))
-
   const removeVariant = (i: number) =>
     setForm(prev => ({ ...prev, variants: prev.variants.filter((_, idx) => idx !== i) }))
-
   const updateVariant = (i: number, key: keyof VariantInput, value: string) =>
-    setForm(prev => ({
-      ...prev,
-      variants: prev.variants.map((v, idx) => idx === i ? { ...v, [key]: value } : v),
-    }))
+    setForm(prev => ({ ...prev, variants: prev.variants.map((v, idx) => idx === i ? { ...v, [key]: value } : v) }))
+
+  const addAddon = () =>
+    setForm(prev => ({ ...prev, addons: [...prev.addons, { label: '', price: '' }] }))
+  const removeAddon = (i: number) =>
+    setForm(prev => ({ ...prev, addons: prev.addons.filter((_, idx) => idx !== i) }))
+  const updateAddon = (i: number, key: keyof AddonInput, value: string) =>
+    setForm(prev => ({ ...prev, addons: prev.addons.map((a, idx) => idx === i ? { ...a, [key]: value } : a) }))
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -330,6 +333,33 @@ function ProductForm({
         )}
       </div>
 
+      {/* Addons */}
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-xs font-medium text-stone-600">內餡選項（選填）</label>
+          <button type="button" onClick={addAddon}
+            className="text-xs text-amber-700 hover:text-amber-900 font-medium transition-colors">
+            ＋ 新增內餡
+          </button>
+        </div>
+        {form.addons.length > 0 ? (
+          <div className="flex flex-col gap-2">
+            {form.addons.map((a, i) => (
+              <div key={i} className="flex gap-2 items-center">
+                <input type="text" value={a.label} placeholder="例：紅豆 / 芋頭" onChange={e => updateAddon(i, 'label', e.target.value)}
+                  className="flex-1 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition" />
+                <input type="number" value={a.price} placeholder="加價" min={0} onChange={e => updateAddon(i, 'price', e.target.value)}
+                  className="w-24 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition" />
+                <button type="button" onClick={() => removeAddon(i)}
+                  className="text-stone-400 hover:text-red-400 text-xl leading-none transition-colors">×</button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-stone-400">不設內餡則不顯示加餡選項</p>
+        )}
+      </div>
+
       {/* Preview */}
       <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0" style={{ backgroundColor: form.bgColor }}>
@@ -347,6 +377,15 @@ function ProductForm({
             </div>
           ) : (
             <p className="text-amber-700 text-sm font-semibold">NT$ {form.price || '0'}</p>
+          )}
+          {form.addons.filter(a => a.label).length > 0 && (
+            <div className="flex gap-1 flex-wrap mt-0.5">
+              {form.addons.filter(a => a.label).map((a, i) => (
+                <span key={i} className="text-xs bg-stone-100 text-stone-600 px-2 py-0.5 rounded-full">
+                  加{a.label}{a.price ? `+$${a.price}` : ''}
+                </span>
+              ))}
+            </div>
           )}
         </div>
       </div>
@@ -372,6 +411,9 @@ function ProductsTab() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
   const [seeding, setSeeding] = useState(false)
   const [seedMsg, setSeedMsg] = useState('')
 
@@ -384,10 +426,14 @@ function ProductsTab() {
     const parsedVariants = form.variants
       .filter(v => v.label.trim() && v.price)
       .map(v => ({ label: v.label.trim(), price: Number(v.price) }))
+    const parsedAddons = form.addons
+      .filter(a => a.label.trim())
+      .map(a => ({ label: a.label.trim(), price: Number(a.price) || 0 }))
     return {
       name: form.name, description: form.description, price: Number(form.price),
       category: form.category, icon: form.icon, bgColor: form.bgColor,
-      ...(parsedVariants.length > 0 ? { variants: parsedVariants } : { variants: [] }),
+      variants: parsedVariants,
+      addons: parsedAddons,
     }
   }
 
@@ -399,6 +445,29 @@ function ProductsTab() {
   const handleEdit = async (id: string, form: FormData) => {
     await updateFirestoreProduct(id, parseForm(form))
     setEditingId(null)
+  }
+
+  const toggleSelect = (id: string) =>
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+
+  const selectAll = () =>
+    setSelectedIds(
+      selectedIds.size === products.length ? new Set() : new Set(products.map(p => p.id))
+    )
+
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true)
+    try {
+      await Promise.all([...selectedIds].map(id => deleteFirestoreProduct(id)))
+      setSelectedIds(new Set())
+      setConfirmBulkDelete(false)
+    } finally {
+      setBulkDeleting(false)
+    }
   }
 
   const handleSeed = async () => {
@@ -422,6 +491,7 @@ function ProductsTab() {
     icon: p.icon,
     bgColor: p.bgColor,
     variants: p.variants?.map(v => ({ label: v.label, price: String(v.price) })) ?? [],
+    addons: p.addons?.map(a => ({ label: a.label, price: String(a.price) })) ?? [],
   })
 
   return (
@@ -462,19 +532,44 @@ function ProductsTab() {
 
       {/* Products List */}
       <div className="bg-white rounded-2xl border border-amber-100 p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <h3 className="font-bold text-stone-800">
             已上架商品
             {products.length > 0 && (
               <span className="ml-2 text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-normal">{products.length} 項</span>
             )}
           </h3>
-          {products.length === 0 && (
-            <button onClick={handleSeed} disabled={seeding}
-              className="text-sm text-amber-700 hover:text-amber-900 font-medium transition-colors">
-              {seeding ? '匯入中...' : '初始化菜單'}
-            </button>
-          )}
+          <div className="flex gap-2 items-center flex-wrap">
+            {products.length > 0 && (
+              <button onClick={selectAll}
+                className="text-xs text-stone-500 hover:text-stone-700 font-medium transition-colors border border-stone-200 px-3 py-1.5 rounded-full hover:bg-stone-50">
+                {selectedIds.size === products.length ? '取消全選' : '全選'}
+              </button>
+            )}
+            {selectedIds.size > 0 && !confirmBulkDelete && (
+              <button onClick={() => setConfirmBulkDelete(true)}
+                className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-full transition-colors font-medium">
+                刪除選取 ({selectedIds.size})
+              </button>
+            )}
+            {confirmBulkDelete && (
+              <div className="flex gap-1 items-center">
+                <span className="text-xs text-red-600 font-medium">確定刪除 {selectedIds.size} 項？</span>
+                <button onClick={handleBulkDelete} disabled={bulkDeleting}
+                  className="text-xs bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white px-3 py-1.5 rounded-full transition-colors">
+                  {bulkDeleting ? '刪除中...' : '確認'}
+                </button>
+                <button onClick={() => setConfirmBulkDelete(false)}
+                  className="text-xs bg-stone-200 text-stone-600 px-3 py-1.5 rounded-full">取消</button>
+              </div>
+            )}
+            {products.length === 0 && (
+              <button onClick={handleSeed} disabled={seeding}
+                className="text-sm text-amber-700 hover:text-amber-900 font-medium transition-colors">
+                {seeding ? '匯入中...' : '初始化菜單'}
+              </button>
+            )}
+          </div>
         </div>
 
         {seedMsg && <p className="mb-3 text-sm text-stone-600 bg-amber-50 px-3 py-2 rounded-lg">{seedMsg}</p>}
@@ -485,7 +580,9 @@ function ProductsTab() {
           <div className="flex flex-col gap-2">
             {products.map(product => (
               <div key={product.id}>
-                <div className="flex items-center gap-3 p-3 border border-amber-50 rounded-xl hover:bg-amber-50 transition-colors">
+                <div className={`flex items-center gap-3 p-3 border rounded-xl transition-colors ${selectedIds.has(product.id) ? 'border-amber-300 bg-amber-50' : 'border-amber-50 hover:bg-amber-50'}`}>
+                  <input type="checkbox" checked={selectedIds.has(product.id)} onChange={() => toggleSelect(product.id)}
+                    className="w-4 h-4 rounded accent-amber-700 shrink-0 cursor-pointer" />
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0" style={{ backgroundColor: product.bgColor }}>
                     {product.icon}
                   </div>

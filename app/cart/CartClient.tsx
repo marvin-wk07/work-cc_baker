@@ -97,7 +97,7 @@ export default function CartClient() {
           </button>
         </div>
         <ul>
-          {items.map(({ product, quantity, variant, cartKey }) => (
+          {items.map(({ product, quantity, variant, addon, cartKey }) => (
             <li
               key={product.id}
               className="flex items-center gap-4 px-5 py-4 border-b border-amber-50 last:border-b-0"
@@ -110,10 +110,17 @@ export default function CartClient() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-stone-800 text-sm truncate">{product.name}</p>
-                {variant && (
-                  <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">{variant.label}</span>
-                )}
-                <p className="text-amber-700 text-sm font-semibold mt-0.5">NT$ {variant?.price ?? product.price}</p>
+                <div className="flex gap-1 flex-wrap mt-0.5">
+                  {variant && (
+                    <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">{variant.label}</span>
+                  )}
+                  {addon && (
+                    <span className="text-xs bg-stone-100 text-stone-600 px-1.5 py-0.5 rounded-full font-medium">加{addon.label}</span>
+                  )}
+                </div>
+                <p className="text-amber-700 text-sm font-semibold mt-0.5">
+                  NT$ {(variant?.price ?? product.price) + (addon?.price ?? 0)}
+                </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <button

@@ -1,22 +1,27 @@
 'use client'
 
 import { useCart } from '../context/CartContext'
-import { Product, ProductVariant } from '../data/products'
+import { Product, ProductVariant, ProductAddon } from '../data/products'
 import { useState } from 'react'
 
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart()
   const hasVariants = product.variants && product.variants.length > 0
+  const hasAddons = product.addons && product.addons.length > 0
+
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | undefined>(
     hasVariants ? product.variants![0] : undefined
   )
+  const [selectedAddon, setSelectedAddon] = useState<ProductAddon | undefined>(undefined)
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
 
-  const displayPrice = selectedVariant?.price ?? product.price
+  const basePrice = selectedVariant?.price ?? product.price
+  const addonPrice = selectedAddon?.price ?? 0
+  const unitPrice = basePrice + addonPrice
 
   const handleAdd = () => {
-    addItem(product, selectedVariant, qty)
+    addItem(product, selectedVariant, selectedAddon, qty)
     setAdded(true)
     setQty(1)
     setTimeout(() => setAdded(false), 1200)
@@ -40,7 +45,7 @@ export default function ProductCard({ product }: { product: Product }) {
         <p className="text-xs text-stone-500 leading-relaxed flex-1">{product.description}</p>
 
         {/* Variant selector */}
-        {hasVariants ? (
+        {hasVariants && (
           <div className="flex gap-1 flex-wrap">
             {product.variants!.map(v => (
               <button
@@ -56,8 +61,50 @@ export default function ProductCard({ product }: { product: Product }) {
               </button>
             ))}
           </div>
-        ) : (
-          <div className="font-bold text-amber-800 text-sm">NT$ {product.price}</div>
+        )}
+
+        {/* Addon selector */}
+        {hasAddons && (
+          <div>
+            <p className="text-xs text-stone-400 mb-1">加內餡 <span className="text-amber-600">(+NT${product.addons![0].price})</span></p>
+            <div className="flex gap-1 flex-wrap">
+              <button
+                onClick={() => setSelectedAddon(undefined)}
+                className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
+                  !selectedAddon
+                    ? 'bg-stone-700 text-white'
+                    : 'bg-stone-100 text-stone-600 border border-stone-200 hover:bg-stone-200'
+                }`}
+              >
+                原味
+              </button>
+              {product.addons!.map(a => (
+                <button
+                  key={a.label}
+                  onClick={() => setSelectedAddon(a)}
+                  className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
+                    selectedAddon?.label === a.label
+                      ? 'bg-stone-700 text-white'
+                      : 'bg-stone-100 text-stone-600 border border-stone-200 hover:bg-stone-200'
+                  }`}
+                >
+                  {a.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Price */}
+        {!hasVariants && (
+          <div className="font-bold text-amber-800 text-sm">
+            NT$ {unitPrice}
+            {addonPrice > 0 && (
+              <span className="text-xs font-normal text-stone-400 ml-1">
+                ({product.price} + {addonPrice})
+              </span>
+            )}
+          </div>
         )}
 
         {/* Quantity + Add */}
@@ -85,7 +132,7 @@ export default function ProductCard({ product }: { product: Product }) {
                 : 'bg-amber-800 hover:bg-amber-700 text-white'
             }`}
           >
-            {added ? '已加入 ✓' : hasVariants ? `加入 NT$${displayPrice * qty}` : '加入購物車'}
+            {added ? '已加入 ✓' : `加入 NT$${unitPrice * qty}`}
           </button>
         </div>
       </div>

@@ -1,18 +1,19 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { Product, ProductVariant } from '../data/products'
+import { Product, ProductVariant, ProductAddon } from '../data/products'
 
 export interface CartItem {
   product: Product
   quantity: number
   variant?: ProductVariant
-  cartKey: string   // `${product.id}::${variant.label}` or just `${product.id}`
+  addon?: ProductAddon
+  cartKey: string
 }
 
 interface CartContextType {
   items: CartItem[]
-  addItem: (product: Product, variant?: ProductVariant, qty?: number) => void
+  addItem: (product: Product, variant?: ProductVariant, addon?: ProductAddon, qty?: number) => void
   removeItem: (cartKey: string) => void
   updateQuantity: (cartKey: string, quantity: number) => void
   clearCart: () => void
@@ -20,8 +21,12 @@ interface CartContextType {
   totalPrice: number
 }
 
-function makeCartKey(productId: string, variantLabel?: string): string {
-  return variantLabel ? `${productId}::${variantLabel}` : productId
+function makeCartKey(productId: string, variantLabel?: string, addonLabel?: string): string {
+  return `${productId}|${variantLabel ?? ''}|${addonLabel ?? ''}`
+}
+
+function itemPrice(item: CartItem): number {
+  return (item.variant?.price ?? item.product.price) + (item.addon?.price ?? 0)
 }
 
 const CartContext = createContext<CartContextType | null>(null)
@@ -34,10 +39,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem('cc-baker-cart')
       if (saved) {
         const parsed = JSON.parse(saved) as CartItem[]
-        // migrate old items without cartKey
         const migrated = parsed.map(item => ({
           ...item,
-          cartKey: item.cartKey || makeCartKey(item.product.id, item.variant?.label),
+          cartKey: item.cartKey || makeCartKey(item.product.id, item.variant?.label, item.addon?.label),
         }))
         setItems(migrated)
       }
@@ -50,8 +54,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('cc-baker-cart', JSON.stringify(items))
   }, [items])
 
-  const addItem = (product: Product, variant?: ProductVariant, qty = 1) => {
-    const cartKey = makeCartKey(product.id, variant?.label)
+  const addItem = (product: Product, variant?: ProductVariant, addon?: ProductAddon, qty = 1) => {
+    const cartKey = makeCartKey(product.id, variant?.label, addon?.label)
     setItems(prev => {
       const existing = prev.find(i => i.cartKey === cartKey)
       if (existing) {
@@ -59,7 +63,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           i.cartKey === cartKey ? { ...i, quantity: i.quantity + qty } : i
         )
       }
-      return [...prev, { product, quantity: qty, variant, cartKey }]
+      return [...prev, { product, quantity: qty, variant, addon, cartKey }]
     })
   }
 
@@ -80,10 +84,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const clearCart = () => setItems([])
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0)
-  const totalPrice = items.reduce((sum, i) => {
-    const price = i.variant?.price ?? i.product.price
-    return sum + price * i.quantity
-  }, 0)
+  const totalPrice = items.reduce((sum, i) => sum + itemPrice(i) * i.quantity, 0)
 
   return (
     <CartContext.Provider
