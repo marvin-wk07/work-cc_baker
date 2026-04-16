@@ -7,6 +7,8 @@ import { subscribeFirestoreProducts } from '../lib/products'
 import { Product } from '../data/products'
 import ProductCard from '../components/ProductCard'
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+
 export default function MenuClient() {
   const [view, setView] = useState<'shop' | 'image'>('shop')
   const [activeCategory, setActiveCategory] = useState('全部')
@@ -67,7 +69,7 @@ export default function MenuClient() {
           <p className="text-sm text-stone-500">點擊圖片可放大查看完整菜單</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {['/menu-p1.jpg', '/menu-p2.jpg'].map((src, i) => (
-              <a key={src} href={src} target="_blank" rel="noopener noreferrer" className="block rounded-2xl overflow-hidden border border-amber-100 shadow-sm hover:shadow-md transition-shadow">
+              <a key={src} href={`${BASE_PATH}${src}`} target="_blank" rel="noopener noreferrer" className="block rounded-2xl overflow-hidden border border-amber-100 shadow-sm hover:shadow-md transition-shadow">
                 <Image
                   src={src}
                   alt={`菜單第 ${i + 1} 頁`}
