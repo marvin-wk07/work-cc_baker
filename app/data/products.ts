@@ -18,8 +18,9 @@ export interface Product {
   icon: string
   variants?: ProductVariant[]
   addons?: ProductAddon[]
-  minQty?: number   // minimum quantity per order (default 1)
-  maxQty?: number   // maximum quantity per order (undefined = unlimited)
+  minQty?: number      // minimum quantity per order (default 1)
+  maxQty?: number      // maximum quantity per order (undefined = unlimited)
+  capacity?: number    // 製作能量，用於估算每日產能（預設 1）
 }
 
 export const categories = [

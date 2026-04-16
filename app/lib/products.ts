@@ -24,6 +24,7 @@ export async function updateFirestoreProduct(id: string, product: Omit<Product, 
   // Convert undefined optional fields to deleteField() so Firestore removes them
   if (product.minQty === undefined) data.minQty = deleteField()
   if (product.maxQty === undefined) data.maxQty = deleteField()
+  if (product.capacity === undefined) data.capacity = deleteField()
   await updateDoc(doc(db, 'products', id), data)
 }
 

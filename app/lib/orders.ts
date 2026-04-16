@@ -54,12 +54,23 @@ export async function saveOrder(data: {
   const dateRef = doc(db, 'shippingDates', data.shippingDateId)
   const orderRef = doc(collection(db, 'orders'))
 
+  // Total capacity of this order
+  const orderCapacity = data.items.reduce(
+    (sum, i) => sum + (i.product.capacity ?? 1) * i.quantity, 0
+  )
+
   await runTransaction(db, async (transaction) => {
     const dateDoc = await transaction.get(dateRef)
     if (!dateDoc.exists()) throw new Error('出貨日期不存在，請重新選擇')
 
-    const { maxOrders, orderCount } = dateDoc.data() as { maxOrders: number; orderCount: number }
-    if (orderCount >= maxOrders) throw new Error('此出貨日期已額滿，請選擇其他日期')
+    const raw = dateDoc.data()
+    // backward-compat: support old field names
+    const maxCapacity: number = raw.maxCapacity ?? raw.maxOrders ?? 0
+    const usedCapacity: number = raw.usedCapacity ?? raw.orderCount ?? 0
+
+    if (usedCapacity + orderCapacity > maxCapacity) {
+      throw new Error('此出貨日期製作能量已不足，請選擇其他日期或減少商品數量')
+    }
 
     transaction.set(orderRef, {
       name: data.name,
@@ -69,11 +80,12 @@ export async function saveOrder(data: {
       note: data.note,
       items: orderItems,
       totalPrice: data.totalPrice,
+      totalCapacity: orderCapacity,
       status: 'pending' as OrderStatus,
       createdAt: serverTimestamp(),
     })
 
-    transaction.update(dateRef, { orderCount: orderCount + 1 })
+    transaction.update(dateRef, { usedCapacity: usedCapacity + orderCapacity })
   })
 }
 

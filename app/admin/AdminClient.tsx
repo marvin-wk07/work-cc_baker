@@ -19,7 +19,6 @@ import {
   formatShippingDate,
   ShippingDate,
 } from '../lib/shippingDates'
-import { subscribeOrderSettings, updateOrderSettings, OrderSettings } from '../lib/settings'
 import { Product, categories } from '../data/products'
 
 // ── Constants ────────────────────────────────────────────────
@@ -52,9 +51,9 @@ type AddonInput  = { label: string; price: string }
 type FormData = {
   name: string; description: string; price: string; category: string
   icon: string; bgColor: string; variants: VariantInput[]; addons: AddonInput[]
-  minQty: string; maxQty: string
+  minQty: string; maxQty: string; capacity: string
 }
-const EMPTY_FORM: FormData = { name: '', description: '', price: '', category: '歐式麵包', icon: '🍞', bgColor: '#FEF3C7', variants: [], addons: [], minQty: '', maxQty: '' }
+const EMPTY_FORM: FormData = { name: '', description: '', price: '', category: '歐式麵包', icon: '🍞', bgColor: '#FEF3C7', variants: [], addons: [], minQty: '', maxQty: '', capacity: '' }
 
 // ── Login ────────────────────────────────────────────────────
 
@@ -370,8 +369,8 @@ function ProductForm({
         )}
       </div>
 
-      {/* Quantity Limits */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* Quantity Limits & Capacity */}
+      <div className="grid grid-cols-3 gap-3">
         <div>
           <label className="block text-xs font-medium text-stone-600 mb-1">最少訂購數量（選填）</label>
           <input type="number" value={form.minQty} min={1} placeholder="預設 1"
@@ -382,6 +381,12 @@ function ProductForm({
           <label className="block text-xs font-medium text-stone-600 mb-1">最多訂購數量（選填）</label>
           <input type="number" value={form.maxQty} min={1} placeholder="不限"
             onChange={e => setForm(prev => ({ ...prev, maxQty: e.target.value }))}
+            className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-stone-600 mb-1">製作能量（選填）</label>
+          <input type="number" value={form.capacity} min={1} placeholder="預設 1"
+            onChange={e => setForm(prev => ({ ...prev, capacity: e.target.value }))}
             className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition" />
         </div>
       </div>
@@ -462,6 +467,7 @@ function ProductsTab() {
       addons: parsedAddons,
       minQty: form.minQty ? Number(form.minQty) : undefined,
       maxQty: form.maxQty ? Number(form.maxQty) : undefined,
+      capacity: form.capacity ? Number(form.capacity) : undefined,
     }
   }
 
@@ -522,6 +528,7 @@ function ProductsTab() {
     addons: p.addons?.map(a => ({ label: a.label, price: String(a.price) })) ?? [],
     minQty: p.minQty !== undefined ? String(p.minQty) : '',
     maxQty: p.maxQty !== undefined ? String(p.maxQty) : '',
+    capacity: p.capacity !== undefined ? String(p.capacity) : '',
   })
 
   return (
@@ -666,8 +673,8 @@ function ShippingDatesTab() {
   const [dates, setDates] = useState<ShippingDate[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
-  const [addForm, setAddForm] = useState({ date: '', maxOrders: '3', note: '' })
-  const [editForm, setEditForm] = useState({ maxOrders: '', note: '' })
+  const [addForm, setAddForm] = useState({ date: '', maxCapacity: '20', note: '' })
+  const [editForm, setEditForm] = useState({ maxCapacity: '', note: '' })
   const [saving, setSaving] = useState(false)
 
   const today = new Date().toISOString().split('T')[0]
@@ -679,15 +686,15 @@ function ShippingDatesTab() {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!addForm.date || !addForm.maxOrders) return
+    if (!addForm.date || !addForm.maxCapacity) return
     setSaving(true)
     try {
       await addShippingDate({
         date: addForm.date,
-        maxOrders: Number(addForm.maxOrders),
+        maxCapacity: Number(addForm.maxCapacity),
         note: addForm.note.trim(),
       })
-      setAddForm({ date: '', maxOrders: '3', note: '' })
+      setAddForm({ date: '', maxCapacity: '20', note: '' })
     } finally {
       setSaving(false)
     }
@@ -695,13 +702,13 @@ function ShippingDatesTab() {
 
   const startEdit = (d: ShippingDate) => {
     setEditingId(d.id)
-    setEditForm({ maxOrders: String(d.maxOrders), note: d.note })
+    setEditForm({ maxCapacity: String(d.maxCapacity), note: d.note })
   }
 
   const handleEdit = async (id: string) => {
     setSaving(true)
     try {
-      await updateShippingDate(id, { maxOrders: Number(editForm.maxOrders), note: editForm.note.trim() })
+      await updateShippingDate(id, { maxCapacity: Number(editForm.maxCapacity), note: editForm.note.trim() })
       setEditingId(null)
     } finally {
       setSaving(false)
@@ -725,9 +732,9 @@ function ShippingDatesTab() {
                 className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-stone-600 mb-1">訂單上限 *</label>
-              <input type="number" value={addForm.maxOrders} min={1}
-                onChange={e => setAddForm(f => ({ ...f, maxOrders: e.target.value }))} required
+              <label className="block text-xs font-medium text-stone-600 mb-1">最大製作能量 *</label>
+              <input type="number" value={addForm.maxCapacity} min={1}
+                onChange={e => setAddForm(f => ({ ...f, maxCapacity: e.target.value }))} required
                 className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition" />
             </div>
           </div>
@@ -755,8 +762,9 @@ function ShippingDatesTab() {
         ) : (
           <div className="flex flex-col gap-2">
             {upcoming.map(d => {
-              const remaining = d.maxOrders - d.orderCount
+              const remaining = d.maxCapacity - d.usedCapacity
               const isFull = remaining <= 0
+              const pct = d.maxCapacity > 0 ? Math.min(100, (d.usedCapacity / d.maxCapacity) * 100) : 0
               return (
                 <div key={d.id}>
                   <div className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${isFull ? 'border-red-100 bg-red-50' : 'border-amber-50 hover:bg-amber-50'}`}>
@@ -766,12 +774,12 @@ function ShippingDatesTab() {
                       <div className="flex items-center gap-2 mt-1">
                         <div className="flex-1 bg-stone-100 rounded-full h-1.5 overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all ${isFull ? 'bg-red-400' : remaining <= 1 ? 'bg-orange-400' : 'bg-green-400'}`}
-                            style={{ width: `${Math.min(100, (d.orderCount / d.maxOrders) * 100)}%` }}
+                            className={`h-full rounded-full transition-all ${isFull ? 'bg-red-400' : remaining <= d.maxCapacity * 0.2 ? 'bg-orange-400' : 'bg-green-400'}`}
+                            style={{ width: `${pct}%` }}
                           />
                         </div>
-                        <span className={`text-xs font-medium shrink-0 ${isFull ? 'text-red-500' : remaining <= 1 ? 'text-orange-500' : 'text-stone-500'}`}>
-                          {d.orderCount} / {d.maxOrders} 單{isFull ? '（已額滿）' : ''}
+                        <span className={`text-xs font-medium shrink-0 ${isFull ? 'text-red-500' : remaining <= d.maxCapacity * 0.2 ? 'text-orange-500' : 'text-stone-500'}`}>
+                          {d.usedCapacity} / {d.maxCapacity}{isFull ? '（已滿）' : ''}
                         </span>
                       </div>
                     </div>
@@ -798,9 +806,9 @@ function ShippingDatesTab() {
                   {editingId === d.id && (
                     <div className="mt-2 p-4 border border-amber-200 rounded-xl bg-amber-50 flex gap-3 items-end">
                       <div>
-                        <label className="block text-xs font-medium text-stone-600 mb-1">訂單上限</label>
-                        <input type="number" value={editForm.maxOrders} min={d.orderCount || 1}
-                          onChange={e => setEditForm(f => ({ ...f, maxOrders: e.target.value }))}
+                        <label className="block text-xs font-medium text-stone-600 mb-1">最大製作能量</label>
+                        <input type="number" value={editForm.maxCapacity} min={d.usedCapacity || 1}
+                          onChange={e => setEditForm(f => ({ ...f, maxCapacity: e.target.value }))}
                           className="w-24 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white focus:outline-none focus:border-amber-400 transition" />
                       </div>
                       <div className="flex-1">
@@ -832,7 +840,7 @@ function ShippingDatesTab() {
             {past.slice(-5).reverse().map(d => (
               <div key={d.id} className="flex items-center justify-between px-3 py-2 rounded-lg text-sm">
                 <span className="text-stone-500">{formatShippingDate(d.date)}</span>
-                <span className="text-xs text-stone-400">{d.orderCount} / {d.maxOrders} 單</span>
+                <span className="text-xs text-stone-400">已用 {d.usedCapacity} / {d.maxCapacity}</span>
                 <button onClick={() => deleteShippingDate(d.id)}
                   className="text-xs text-stone-400 hover:text-red-400 ml-2 transition-colors">刪除</button>
               </div>
@@ -844,73 +852,10 @@ function ShippingDatesTab() {
   )
 }
 
-// ── Settings Tab ────────────────────────────────────────────
-
-function SettingsTab() {
-  const [settings, setSettings] = useState<OrderSettings>({ maxItemsPerOrder: 0 })
-  const [form, setForm] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
-
-  useEffect(() => {
-    const unsub = subscribeOrderSettings(s => {
-      setSettings(s)
-      setForm(s.maxItemsPerOrder > 0 ? String(s.maxItemsPerOrder) : '')
-    })
-    return () => unsub()
-  }, [])
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSaving(true)
-    try {
-      await updateOrderSettings({ maxItemsPerOrder: form ? Number(form) : 0 })
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="bg-white rounded-2xl border border-amber-100 p-5 shadow-sm">
-        <h3 className="font-bold text-stone-800 mb-1">訂單設定</h3>
-        <p className="text-xs text-stone-400 mb-4">設定每筆訂單可購買的商品件數上限</p>
-        <form onSubmit={handleSave} className="flex flex-col gap-4 max-w-sm">
-          <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">
-              每筆訂單最多件數
-            </label>
-            <input
-              type="number"
-              value={form}
-              min={0}
-              placeholder="留空或 0 表示不限制"
-              onChange={e => setForm(e.target.value)}
-              className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition"
-            />
-            <p className="text-xs text-stone-400 mt-1">
-              目前：{settings.maxItemsPerOrder > 0 ? `最多 ${settings.maxItemsPerOrder} 件` : '不限制'}
-            </p>
-          </div>
-          <button
-            type="submit"
-            disabled={saving}
-            className="bg-amber-800 hover:bg-amber-700 disabled:bg-amber-300 text-white font-bold py-2.5 rounded-xl transition-colors text-sm"
-          >
-            {saving ? '儲存中...' : saved ? '已儲存 ✓' : '儲存設定'}
-          </button>
-        </form>
-      </div>
-    </div>
-  )
-}
-
 // ── Dashboard ────────────────────────────────────────────────
 
 function Dashboard({ user }: { user: User }) {
-  const [tab, setTab] = useState<'orders' | 'products' | 'shipping' | 'settings'>('orders')
+  const [tab, setTab] = useState<'orders' | 'products' | 'shipping'>('orders')
   return (
     <div className="min-h-screen bg-amber-50">
       <header className="bg-amber-950 text-white px-6 py-4 flex items-center justify-between">
@@ -924,14 +869,14 @@ function Dashboard({ user }: { user: User }) {
       </header>
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="flex gap-2 mb-6 flex-wrap">
-          {(['orders', 'products', 'shipping', 'settings'] as const).map(t => (
+          {(['orders', 'products', 'shipping'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
               className={`px-5 py-2 rounded-full font-medium text-sm transition-colors ${tab === t ? 'bg-amber-800 text-white shadow-sm' : 'bg-white text-stone-600 border border-amber-200 hover:bg-amber-50'}`}>
-              {t === 'orders' ? '訂單管理' : t === 'products' ? '商品管理' : t === 'shipping' ? '出貨日期' : '設定'}
+              {t === 'orders' ? '訂單管理' : t === 'products' ? '商品管理' : '出貨日期'}
             </button>
           ))}
         </div>
-        {tab === 'orders' ? <OrdersTab /> : tab === 'products' ? <ProductsTab /> : tab === 'shipping' ? <ShippingDatesTab /> : <SettingsTab />}
+        {tab === 'orders' ? <OrdersTab /> : tab === 'products' ? <ProductsTab /> : <ShippingDatesTab />}
       </div>
     </div>
   )

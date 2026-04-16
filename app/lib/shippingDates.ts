@@ -3,9 +3,9 @@ import { db } from './firebase'
 
 export interface ShippingDate {
   id: string
-  date: string        // "YYYY-MM-DD"
-  maxOrders: number
-  orderCount: number
+  date: string          // "YYYY-MM-DD"
+  maxCapacity: number   // 每日最大製作能量
+  usedCapacity: number  // 已使用製作能量
   note: string
 }
 
@@ -15,11 +15,11 @@ export function formatShippingDate(dateStr: string): string {
   return `${d.getMonth() + 1}月${d.getDate()}日（週${days[d.getDay()]}）`
 }
 
-export async function addShippingDate(data: Omit<ShippingDate, 'id' | 'orderCount'>) {
-  await addDoc(collection(db, 'shippingDates'), { ...data, orderCount: 0 })
+export async function addShippingDate(data: Omit<ShippingDate, 'id' | 'usedCapacity'>) {
+  await addDoc(collection(db, 'shippingDates'), { ...data, usedCapacity: 0 })
 }
 
-export async function updateShippingDate(id: string, data: Partial<Omit<ShippingDate, 'id' | 'orderCount'>>) {
+export async function updateShippingDate(id: string, data: Partial<Omit<ShippingDate, 'id' | 'usedCapacity'>>) {
   await updateDoc(doc(db, 'shippingDates', id), data)
 }
 
@@ -29,7 +29,17 @@ export async function deleteShippingDate(id: string) {
 
 export function subscribeShippingDates(callback: (dates: ShippingDate[]) => void) {
   return onSnapshot(collection(db, 'shippingDates'), snapshot => {
-    const dates = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as ShippingDate[]
+    const dates = snapshot.docs.map(d => {
+      const data = d.data()
+      return {
+        id: d.id,
+        date: data.date ?? '',
+        // backward-compat: fall back to old field names
+        maxCapacity: data.maxCapacity ?? data.maxOrders ?? 0,
+        usedCapacity: data.usedCapacity ?? data.orderCount ?? 0,
+        note: data.note ?? '',
+      } as ShippingDate
+    })
     dates.sort((a, b) => a.date.localeCompare(b.date))
     callback(dates)
   })

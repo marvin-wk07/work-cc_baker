@@ -19,6 +19,7 @@ interface CartContextType {
   clearCart: () => void
   totalItems: number
   totalPrice: number
+  totalCapacity: number  // 購物車總製作能量
 }
 
 function makeCartKey(productId: string, variantLabel?: string, addonLabel?: string): string {
@@ -96,10 +97,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0)
   const totalPrice = items.reduce((sum, i) => sum + itemPrice(i) * i.quantity, 0)
+  const totalCapacity = items.reduce((sum, i) => sum + (i.product.capacity ?? 1) * i.quantity, 0)
 
   return (
     <CartContext.Provider
-      value={{ items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice }}
+      value={{ items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice, totalCapacity }}
     >
       {children}
     </CartContext.Provider>
