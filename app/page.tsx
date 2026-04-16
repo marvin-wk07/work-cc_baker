@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import ProductCard from './components/ProductCard'
-import { products } from './data/products'
+import { defaultProducts as products } from './data/products'
 
 const features = [
   {

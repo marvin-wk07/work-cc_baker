@@ -3,17 +3,23 @@ import {
   addDoc,
   deleteDoc,
   doc,
+  updateDoc,
   onSnapshot,
   serverTimestamp,
+  getDocs,
 } from 'firebase/firestore'
 import { db } from './firebase'
-import { Product } from '../data/products'
+import { Product, seedProducts } from '../data/products'
 
 export async function addFirestoreProduct(product: Omit<Product, 'id'>) {
   await addDoc(collection(db, 'products'), {
     ...product,
     createdAt: serverTimestamp(),
   })
+}
+
+export async function updateFirestoreProduct(id: string, product: Omit<Product, 'id'>) {
+  await updateDoc(doc(db, 'products', id), { ...product })
 }
 
 export async function deleteFirestoreProduct(productId: string) {
@@ -28,4 +34,17 @@ export function subscribeFirestoreProducts(callback: (products: Product[]) => vo
     })) as Product[]
     callback(products)
   })
+}
+
+export async function seedMenuProducts(): Promise<number> {
+  const existing = await getDocs(collection(db, 'products'))
+  if (!existing.empty) return 0
+
+  for (const product of seedProducts) {
+    await addDoc(collection(db, 'products'), {
+      ...product,
+      createdAt: serverTimestamp(),
+    })
+  }
+  return seedProducts.length
 }
