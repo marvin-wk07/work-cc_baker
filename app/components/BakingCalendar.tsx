@@ -10,8 +10,8 @@ function CapacityBadge({ remaining, max }: { remaining: number; max: number }) {
   const isLow = !isFull && remaining <= max * 0.2
 
   const barColor = isFull ? 'bg-rose-300' : isLow ? 'bg-amber-300' : 'bg-emerald-300'
-  const textColor = isFull ? 'text-rose-500' : isLow ? 'text-amber-600' : 'text-emerald-600'
-  const label = isFull ? '已額滿' : `剩餘 ${remaining}`
+  const textColor = isFull ? 'text-red-400' : isLow ? 'text-amber-600' : 'text-emerald-600'
+  const label = isFull ? '已額滿' : `剩餘製作能量 ${remaining} / ${max}`
 
   return (
     <div className="mt-2">
@@ -56,7 +56,7 @@ export default function BakingCalendar() {
     <section className="py-14 px-4 bg-white">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
-          <p className="text-rose-400 text-xs font-semibold tracking-widest uppercase mb-1">Baking Schedule</p>
+          <p className="text-amber-500 text-xs font-semibold tracking-widest uppercase mb-1">Baking Schedule</p>
           <h2 className="text-2xl font-bold text-stone-700">烘培月曆</h2>
           <p className="text-stone-400 text-sm mt-1">即將出貨日期及每日剩餘製作能量</p>
         </div>
@@ -74,8 +74,8 @@ export default function BakingCalendar() {
                   isFull
                     ? 'bg-stone-50 border-stone-100 opacity-60'
                     : isToday
-                    ? 'bg-rose-50 border-rose-200 shadow-sm'
-                    : 'bg-white border-rose-100 hover:shadow-sm'
+                    ? 'bg-amber-50 border-amber-200 shadow-sm'
+                    : 'bg-white border-amber-100 hover:shadow-sm'
                 }`}
               >
                 <div className="flex items-start justify-between gap-1">
@@ -87,7 +87,7 @@ export default function BakingCalendar() {
                     <p className={`text-xs mt-0.5 ${isFull ? 'text-stone-300' : 'text-stone-400'}`}>週{weekday}</p>
                   </div>
                   {isToday && (
-                    <span className="text-xs bg-rose-400 text-white px-1.5 py-0.5 rounded-full font-medium shrink-0">今日</span>
+                    <span className="text-xs bg-amber-400 text-white px-1.5 py-0.5 rounded-full font-medium shrink-0">今日</span>
                   )}
                 </div>
 

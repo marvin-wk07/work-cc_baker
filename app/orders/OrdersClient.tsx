@@ -44,19 +44,19 @@ export default function OrdersClient() {
   return (
     <div className="flex flex-col gap-6">
       {/* Search Form */}
-      <div className="bg-white rounded-2xl border border-rose-100 shadow-sm p-6">
+      <div className="bg-white rounded-2xl border border-amber-100 shadow-sm p-6">
         <form onSubmit={handleSearch} className="flex gap-3">
           <input
             type="tel"
             value={phone}
             onChange={e => setPhone(e.target.value)}
             placeholder="請輸入電話號碼，例：0912345678"
-            className="flex-1 border border-stone-200 rounded-xl px-4 py-3 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition"
+            className="flex-1 border border-stone-200 rounded-xl px-4 py-3 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-amber-200 focus:ring-2 focus:ring-amber-100 transition"
           />
           <button
             type="submit"
             disabled={loading || !phone.trim()}
-            className="bg-rose-500 hover:bg-rose-400 disabled:bg-rose-200 text-white font-bold px-5 py-3 rounded-xl transition-colors text-sm whitespace-nowrap"
+            className="bg-amber-400 hover:bg-amber-300 disabled:bg-amber-200 text-white font-bold px-5 py-3 rounded-xl transition-colors text-sm whitespace-nowrap"
           >
             {loading ? '查詢中...' : '查詢'}
           </button>
@@ -76,7 +76,7 @@ export default function OrdersClient() {
           <div className="flex flex-col gap-4">
             <p className="text-sm text-stone-500">共找到 <span className="font-medium text-stone-800">{orders.length}</span> 筆訂單</p>
             {orders.map(order => (
-              <div key={order.id} className="bg-white rounded-2xl border border-rose-100 shadow-sm overflow-hidden">
+              <div key={order.id} className="bg-white rounded-2xl border border-amber-100 shadow-sm overflow-hidden">
                 {/* Status bar */}
                 <div className={`px-5 py-2 flex items-center gap-2 text-sm font-medium ${STATUS_COLOR[order.status]}`}>
                   <span>{STATUS_ICON[order.status]}</span>
@@ -101,12 +101,12 @@ export default function OrdersClient() {
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="font-bold text-rose-700 text-lg">NT$ {order.totalPrice}</div>
+                      <div className="font-bold text-amber-700 text-lg">NT$ {order.totalPrice}</div>
                     </div>
                   </div>
 
                   {/* Items */}
-                  <ul className="flex flex-col gap-1 border-t border-rose-50 pt-3">
+                  <ul className="flex flex-col gap-1 border-t border-amber-50 pt-3">
                     {order.items.map((item, i) => (
                       <li key={i} className="flex justify-between text-sm">
                         <span className="text-stone-700">{item.name} × {item.quantity}</span>

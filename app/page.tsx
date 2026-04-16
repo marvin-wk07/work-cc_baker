@@ -23,14 +23,14 @@ export default function HomePage() {
   return (
     <div>
       {/* Hero */}
-      <section className="bg-gradient-to-br from-rose-100 via-pink-50 to-amber-50 py-20 px-4">
+      <section className="bg-gradient-to-br from-amber-100 via-yellow-50 to-white py-20 px-4">
         <div className="max-w-3xl mx-auto text-center">
-          <p className="text-rose-400 text-sm font-medium tracking-widest uppercase mb-4">
+          <p className="text-amber-600 text-sm font-medium tracking-widest uppercase mb-4">
             Artisan Bakery · 手工烘焙
           </p>
           <h1 className="text-4xl sm:text-5xl font-bold leading-tight text-stone-700 mb-6">
             每一口，都是<br />
-            <span className="text-rose-400">用心烘焙的溫度</span>
+            <span className="text-amber-500">用心烘焙的溫度</span>
           </h1>
           <p className="text-stone-500 text-lg leading-relaxed mb-10 max-w-xl mx-auto">
             CC Baker 堅持每日手工製作，使用天然食材，
@@ -39,13 +39,13 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/menu"
-              className="bg-rose-400 hover:bg-rose-300 text-white font-bold px-8 py-3 rounded-full text-base transition-colors shadow-sm"
+              className="bg-amber-400 hover:bg-amber-300 text-white font-bold px-8 py-3 rounded-full text-base transition-colors shadow-sm"
             >
               查看今日菜單 →
             </Link>
             <Link
               href="/cart"
-              className="border border-rose-200 text-rose-500 hover:bg-rose-50 px-8 py-3 rounded-full text-base transition-colors font-medium"
+              className="border border-amber-200 text-amber-600 hover:bg-amber-50 px-8 py-3 rounded-full text-base transition-colors font-medium"
             >
               我的購物車
             </Link>
@@ -54,7 +54,7 @@ export default function HomePage() {
       </section>
 
       {/* Features */}
-      <section className="py-14 px-4 bg-rose-50">
+      <section className="py-14 px-4 bg-amber-50">
         <div className="max-w-4xl mx-auto">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
             {features.map(f => (
@@ -72,16 +72,16 @@ export default function HomePage() {
       <BakingCalendar />
 
       {/* CTA */}
-      <section className="bg-rose-400 text-white py-12 px-4 text-center">
+      <section className="bg-amber-400 text-white py-12 px-4 text-center">
         <div className="max-w-xl mx-auto">
           <h2 className="text-2xl font-bold mb-3">準備好訂購了嗎？</h2>
-          <p className="text-rose-100 mb-6 text-sm leading-relaxed">
+          <p className="text-amber-100 mb-6 text-sm leading-relaxed">
             瀏覽完整菜單，加入購物車，即可預訂您喜愛的麵包。<br />
             每日限量，請盡早下單！
           </p>
           <Link
             href="/menu"
-            className="inline-block bg-white text-rose-500 font-bold px-8 py-3 rounded-full hover:bg-rose-50 transition-colors"
+            className="inline-block bg-white text-amber-700 font-bold px-8 py-3 rounded-full hover:bg-amber-50 transition-colors"
           >
             立即選購
           </Link>
