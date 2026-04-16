@@ -97,7 +97,7 @@ export default function CartClient() {
           </button>
         </div>
         <ul>
-          {items.map(({ product, quantity }) => (
+          {items.map(({ product, quantity, variant, cartKey }) => (
             <li
               key={product.id}
               className="flex items-center gap-4 px-5 py-4 border-b border-amber-50 last:border-b-0"
@@ -110,24 +110,27 @@ export default function CartClient() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-stone-800 text-sm truncate">{product.name}</p>
-                <p className="text-amber-700 text-sm font-semibold">NT$ {product.price}</p>
+                {variant && (
+                  <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">{variant.label}</span>
+                )}
+                <p className="text-amber-700 text-sm font-semibold mt-0.5">NT$ {variant?.price ?? product.price}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <button
-                  onClick={() => updateQuantity(product.id, quantity - 1)}
+                  onClick={() => updateQuantity(cartKey, quantity - 1)}
                   className="w-7 h-7 rounded-full bg-amber-100 hover:bg-amber-200 text-stone-700 font-bold text-sm flex items-center justify-center transition-colors"
                 >
                   −
                 </button>
                 <span className="w-6 text-center font-medium text-sm">{quantity}</span>
                 <button
-                  onClick={() => updateQuantity(product.id, quantity + 1)}
+                  onClick={() => updateQuantity(cartKey, quantity + 1)}
                   className="w-7 h-7 rounded-full bg-amber-100 hover:bg-amber-200 text-stone-700 font-bold text-sm flex items-center justify-center transition-colors"
                 >
                   +
                 </button>
                 <button
-                  onClick={() => removeItem(product.id)}
+                  onClick={() => removeItem(cartKey)}
                   className="ml-1 text-stone-300 hover:text-red-400 transition-colors text-lg leading-none"
                   aria-label="移除"
                 >

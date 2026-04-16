@@ -1,16 +1,22 @@
 'use client'
 
 import { useCart } from '../context/CartContext'
-import { Product } from '../data/products'
+import { Product, ProductVariant } from '../data/products'
 import { useState } from 'react'
 
 export default function ProductCard({ product }: { product: Product }) {
   const { addItem } = useCart()
+  const hasVariants = product.variants && product.variants.length > 0
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | undefined>(
+    hasVariants ? product.variants![0] : undefined
+  )
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
 
+  const displayPrice = selectedVariant?.price ?? product.price
+
   const handleAdd = () => {
-    for (let i = 0; i < qty; i++) addItem(product)
+    addItem(product, selectedVariant, qty)
     setAdded(true)
     setQty(1)
     setTimeout(() => setAdded(false), 1200)
@@ -32,7 +38,27 @@ export default function ProductCard({ product }: { product: Product }) {
           </span>
         </div>
         <p className="text-xs text-stone-500 leading-relaxed flex-1">{product.description}</p>
-        <div className="font-bold text-amber-800 text-sm">NT$ {product.price}</div>
+
+        {/* Variant selector */}
+        {hasVariants ? (
+          <div className="flex gap-1 flex-wrap">
+            {product.variants!.map(v => (
+              <button
+                key={v.label}
+                onClick={() => setSelectedVariant(v)}
+                className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
+                  selectedVariant?.label === v.label
+                    ? 'bg-amber-800 text-white'
+                    : 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
+                }`}
+              >
+                {v.label}・NT${v.price}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="font-bold text-amber-800 text-sm">NT$ {product.price}</div>
+        )}
 
         {/* Quantity + Add */}
         <div className="flex items-center gap-2 mt-1">
@@ -59,7 +85,7 @@ export default function ProductCard({ product }: { product: Product }) {
                 : 'bg-amber-800 hover:bg-amber-700 text-white'
             }`}
           >
-            {added ? '已加入 ✓' : '加入購物車'}
+            {added ? '已加入 ✓' : hasVariants ? `加入 NT$${displayPrice * qty}` : '加入購物車'}
           </button>
         </div>
       </div>

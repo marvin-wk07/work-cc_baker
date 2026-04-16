@@ -37,8 +37,8 @@ export async function saveOrder(data: {
 }) {
   const orderItems = data.items.map(i => ({
     productId: i.product.id,
-    name: i.product.name,
-    price: i.product.price,
+    name: i.variant ? `${i.product.name}（${i.variant.label}）` : i.product.name,
+    price: i.variant?.price ?? i.product.price,
     quantity: i.quantity,
   }))
 

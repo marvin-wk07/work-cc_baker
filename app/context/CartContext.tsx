@@ -1,21 +1,27 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { Product } from '../data/products'
+import { Product, ProductVariant } from '../data/products'
 
 export interface CartItem {
   product: Product
   quantity: number
+  variant?: ProductVariant
+  cartKey: string   // `${product.id}::${variant.label}` or just `${product.id}`
 }
 
 interface CartContextType {
   items: CartItem[]
-  addItem: (product: Product) => void
-  removeItem: (productId: string) => void
-  updateQuantity: (productId: string, quantity: number) => void
+  addItem: (product: Product, variant?: ProductVariant, qty?: number) => void
+  removeItem: (cartKey: string) => void
+  updateQuantity: (cartKey: string, quantity: number) => void
   clearCart: () => void
   totalItems: number
   totalPrice: number
+}
+
+function makeCartKey(productId: string, variantLabel?: string): string {
+  return variantLabel ? `${productId}::${variantLabel}` : productId
 }
 
 const CartContext = createContext<CartContextType | null>(null)
@@ -26,7 +32,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const saved = localStorage.getItem('cc-baker-cart')
-      if (saved) setItems(JSON.parse(saved))
+      if (saved) {
+        const parsed = JSON.parse(saved) as CartItem[]
+        // migrate old items without cartKey
+        const migrated = parsed.map(item => ({
+          ...item,
+          cartKey: item.cartKey || makeCartKey(item.product.id, item.variant?.label),
+        }))
+        setItems(migrated)
+      }
     } catch {
       // ignore
     }
@@ -36,36 +50,40 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('cc-baker-cart', JSON.stringify(items))
   }, [items])
 
-  const addItem = (product: Product) => {
+  const addItem = (product: Product, variant?: ProductVariant, qty = 1) => {
+    const cartKey = makeCartKey(product.id, variant?.label)
     setItems(prev => {
-      const existing = prev.find(i => i.product.id === product.id)
+      const existing = prev.find(i => i.cartKey === cartKey)
       if (existing) {
         return prev.map(i =>
-          i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i
+          i.cartKey === cartKey ? { ...i, quantity: i.quantity + qty } : i
         )
       }
-      return [...prev, { product, quantity: 1 }]
+      return [...prev, { product, quantity: qty, variant, cartKey }]
     })
   }
 
-  const removeItem = (productId: string) => {
-    setItems(prev => prev.filter(i => i.product.id !== productId))
+  const removeItem = (cartKey: string) => {
+    setItems(prev => prev.filter(i => i.cartKey !== cartKey))
   }
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = (cartKey: string, quantity: number) => {
     if (quantity <= 0) {
-      removeItem(productId)
+      removeItem(cartKey)
       return
     }
     setItems(prev =>
-      prev.map(i => (i.product.id === productId ? { ...i, quantity } : i))
+      prev.map(i => (i.cartKey === cartKey ? { ...i, quantity } : i))
     )
   }
 
   const clearCart = () => setItems([])
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0)
-  const totalPrice = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0)
+  const totalPrice = items.reduce((sum, i) => {
+    const price = i.variant?.price ?? i.product.price
+    return sum + price * i.quantity
+  }, 0)
 
   return (
     <CartContext.Provider

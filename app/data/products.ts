@@ -1,3 +1,8 @@
+export interface ProductVariant {
+  label: string   // e.g. "9顆", "12顆", "單顆", "整條"
+  price: number
+}
+
 export interface Product {
   id: string
   name: string
@@ -6,6 +11,7 @@ export interface Product {
   category: string
   bgColor: string
   icon: string
+  variants?: ProductVariant[]
 }
 
 export const categories = [
@@ -70,9 +76,10 @@ export const seedProducts: Omit<Product, 'id'>[] = [
   { name: '波蘭種 帕瑪森', description: '波蘭種製法，帕瑪森起司風味，每顆', price: 18, category: '餐包', bgColor: '#FEF3C7', icon: '🍞' },
   { name: '波蘭種 帕瑪森乳酪丁', description: '波蘭種製法，帕瑪森與乳酪丁雙重起司，每顆', price: 25, category: '餐包', bgColor: '#FFF7ED', icon: '🍞' },
   // ── 老麵系列 ──
-  { name: '鹽奶油奇亞籽（顆）', description: '鮮奶老麵，鹽奶油奇亞籽口味，單顆 $20，整條 $80', price: 20, category: '老麵系列', bgColor: '#FEF3C7', icon: '🍞' },
-  { name: '草莓乾/乳酪丁（顆）', description: '鮮奶老麵，草莓乾配乳酪丁，單顆 $25，整條 $100', price: 25, category: '老麵系列', bgColor: '#FFF1F2', icon: '🍞' },
-  { name: '草莓乾乳酪丁（條）', description: '鮮奶老麵，草莓乾乳酪丁整條販售，每條', price: 120, category: '老麵系列', bgColor: '#FFF1F2', icon: '🍞' },
+  { name: '鹽奶油奇亞籽', description: '鮮奶老麵，鹽奶油奇亞籽口味，外皮酥脆香氣十足', price: 20, category: '老麵系列', bgColor: '#FEF3C7', icon: '🍞',
+    variants: [{ label: '單顆', price: 20 }, { label: '整條', price: 80 }] },
+  { name: '草莓乾乳酪丁', description: '鮮奶老麵，草莓乾配乳酪丁，酸甜鹹香交織', price: 25, category: '老麵系列', bgColor: '#FFF1F2', icon: '🍞',
+    variants: [{ label: '單顆', price: 25 }, { label: '整條', price: 100 }] },
   // ── 吐司 ──
   { name: '波蘭種大餐包', description: '波蘭種製法大餐包，鬆軟有嚼勁，每個', price: 15, category: '吐司', bgColor: '#FEFCE8', icon: '🍞' },
   { name: '起司小吐司', description: '起司風味小吐司，每條', price: 75, category: '吐司', bgColor: '#FEF9C3', icon: '🍞' },
@@ -89,9 +96,12 @@ export const seedProducts: Omit<Product, 'id'>[] = [
   { name: '柿子頭 原味微甜', description: '台式柿子頭造型麵包，原味微甜，每顆', price: 11, category: '特色', bgColor: '#FFF7ED', icon: '🍞' },
   { name: '柿子頭 全麥黑芝麻', description: '全麥黑芝麻柿子頭，健康美味，每顆', price: 13, category: '特色', bgColor: '#F5F5F4', icon: '🍞' },
   // ── 手撕麵包 ──
-  { name: '草莓乾手撕麵包', description: '草莓乾口味，適合分享，9顆 $180 / 12顆 $240', price: 180, category: '手撕麵包', bgColor: '#FFF1F2', icon: '🍞' },
-  { name: '橘子皮核桃手撕', description: '橘子皮核桃口味，香氣迷人，9顆 $160 / 12顆 $210', price: 160, category: '手撕麵包', bgColor: '#FEF3C7', icon: '🍞' },
-  { name: '紅豆/黑芝麻手撕', description: '多口味：紅豆、黑芝麻、芋泥或蔓果，9顆 $120 / 12顆 $160', price: 120, category: '手撕麵包', bgColor: '#FFF1F2', icon: '🍞' },
+  { name: '草莓乾手撕麵包', description: '草莓乾口味，柔軟拉絲，適合分享', price: 180, category: '手撕麵包', bgColor: '#FFF1F2', icon: '🍞',
+    variants: [{ label: '9顆', price: 180 }, { label: '12顆', price: 240 }] },
+  { name: '橘子皮核桃手撕', description: '橘子皮核桃口味，香氣迷人', price: 160, category: '手撕麵包', bgColor: '#FEF3C7', icon: '🍞',
+    variants: [{ label: '9顆', price: 160 }, { label: '12顆', price: 210 }] },
+  { name: '紅豆/黑芝麻手撕', description: '多口味：紅豆、黑芝麻、芋泥或蔓果', price: 120, category: '手撕麵包', bgColor: '#FFF1F2', icon: '🍞',
+    variants: [{ label: '9顆', price: 120 }, { label: '12顆', price: 160 }] },
   // ── 包子饅頭 ──
   { name: '白饅頭', description: '傳統白饅頭，鬆軟Q彈，可加紅豆/芋頭/芝麻餡（+$10），每顆', price: 10, category: '包子饅頭', bgColor: '#F5F5F4', icon: '🥟' },
   { name: '全麥饅頭', description: '全麥製作饅頭，高纖健康，可加內餡（+$10），每顆', price: 10, category: '包子饅頭', bgColor: '#E7E5E4', icon: '🥟' },

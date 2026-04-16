@@ -38,7 +38,12 @@ const DEFAULT_COLORS = [
   '#F0FDF4', '#F5F5F4', '#FEFCE8', '#EDE9FE', '#F5F0FF', '#E7E5E4',
 ]
 
-const EMPTY_FORM = { name: '', description: '', price: '', category: '歐式麵包', icon: '🍞', bgColor: '#FEF3C7' }
+type VariantInput = { label: string; price: string }
+type FormData = {
+  name: string; description: string; price: string; category: string
+  icon: string; bgColor: string; variants: VariantInput[]
+}
+const EMPTY_FORM: FormData = { name: '', description: '', price: '', category: '歐式麵包', icon: '🍞', bgColor: '#FEF3C7', variants: [] }
 
 // ── Login ────────────────────────────────────────────────────
 
@@ -217,16 +222,28 @@ function ProductForm({
   onCancel,
   saveLabel,
 }: {
-  initial: typeof EMPTY_FORM
-  onSave: (data: typeof EMPTY_FORM) => Promise<void>
+  initial: FormData
+  onSave: (data: FormData) => Promise<void>
   onCancel: () => void
   saveLabel: string
 }) {
-  const [form, setForm] = useState(initial)
+  const [form, setForm] = useState<FormData>(initial)
   const [saving, setSaving] = useState(false)
 
-  const f = (key: keyof typeof EMPTY_FORM) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+  const f = (key: keyof Omit<FormData, 'variants'>) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm(prev => ({ ...prev, [key]: e.target.value }))
+
+  const addVariant = () =>
+    setForm(prev => ({ ...prev, variants: [...prev.variants, { label: '', price: '' }] }))
+
+  const removeVariant = (i: number) =>
+    setForm(prev => ({ ...prev, variants: prev.variants.filter((_, idx) => idx !== i) }))
+
+  const updateVariant = (i: number, key: keyof VariantInput, value: string) =>
+    setForm(prev => ({
+      ...prev,
+      variants: prev.variants.map((v, idx) => idx === i ? { ...v, [key]: value } : v),
+    }))
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -285,14 +302,52 @@ function ProductForm({
         </div>
       </div>
 
+      {/* Variants */}
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-xs font-medium text-stone-600">規格選項（選填）</label>
+          <button type="button" onClick={addVariant}
+            className="text-xs text-amber-700 hover:text-amber-900 font-medium transition-colors">
+            ＋ 新增規格
+          </button>
+        </div>
+        {form.variants.length > 0 && (
+          <div className="flex flex-col gap-2">
+            {form.variants.map((v, i) => (
+              <div key={i} className="flex gap-2 items-center">
+                <input type="text" value={v.label} placeholder="例：9顆 / 整條" onChange={e => updateVariant(i, 'label', e.target.value)}
+                  className="flex-1 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition" />
+                <input type="number" value={v.price} placeholder="價格" min={1} onChange={e => updateVariant(i, 'price', e.target.value)}
+                  className="w-24 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition" />
+                <button type="button" onClick={() => removeVariant(i)}
+                  className="text-stone-400 hover:text-red-400 text-xl leading-none transition-colors">×</button>
+              </div>
+            ))}
+          </div>
+        )}
+        {form.variants.length === 0 && (
+          <p className="text-xs text-stone-400">不設規格則以上方統一價格販售</p>
+        )}
+      </div>
+
       {/* Preview */}
       <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0" style={{ backgroundColor: form.bgColor }}>
           {form.icon}
         </div>
-        <div>
+        <div className="flex-1 min-w-0">
           <p className="font-medium text-stone-800 text-sm">{form.name || '商品名稱'}</p>
-          <p className="text-amber-700 text-sm font-semibold">NT$ {form.price || '0'}</p>
+          {form.variants.length > 0 ? (
+            <div className="flex gap-1 flex-wrap mt-0.5">
+              {form.variants.filter(v => v.label).map((v, i) => (
+                <span key={i} className="text-xs bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full">
+                  {v.label}{v.price ? `・NT$${v.price}` : ''}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-amber-700 text-sm font-semibold">NT$ {form.price || '0'}</p>
+          )}
         </div>
       </div>
 
@@ -325,13 +380,24 @@ function ProductsTab() {
     return () => unsub()
   }, [])
 
-  const handleAdd = async (form: typeof EMPTY_FORM) => {
-    await addFirestoreProduct({ ...form, price: Number(form.price) })
+  const parseForm = (form: FormData) => {
+    const parsedVariants = form.variants
+      .filter(v => v.label.trim() && v.price)
+      .map(v => ({ label: v.label.trim(), price: Number(v.price) }))
+    return {
+      name: form.name, description: form.description, price: Number(form.price),
+      category: form.category, icon: form.icon, bgColor: form.bgColor,
+      ...(parsedVariants.length > 0 ? { variants: parsedVariants } : { variants: [] }),
+    }
+  }
+
+  const handleAdd = async (form: FormData) => {
+    await addFirestoreProduct(parseForm(form))
     setShowAddForm(false)
   }
 
-  const handleEdit = async (id: string, form: typeof EMPTY_FORM) => {
-    await updateFirestoreProduct(id, { ...form, price: Number(form.price) })
+  const handleEdit = async (id: string, form: FormData) => {
+    await updateFirestoreProduct(id, parseForm(form))
     setEditingId(null)
   }
 
@@ -348,13 +414,14 @@ function ProductsTab() {
     }
   }
 
-  const editInitial = (p: Product): typeof EMPTY_FORM => ({
+  const editInitial = (p: Product): FormData => ({
     name: p.name,
     description: p.description,
     price: String(p.price),
     category: p.category,
     icon: p.icon,
     bgColor: p.bgColor,
+    variants: p.variants?.map(v => ({ label: v.label, price: String(v.price) })) ?? [],
   })
 
   return (
