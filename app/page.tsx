@@ -1,65 +1,115 @@
-import Image from "next/image";
+import Link from 'next/link'
+import ProductCard from './components/ProductCard'
+import { products, featuredIds } from './data/products'
 
-export default function Home() {
+const featured = products.filter(p => featuredIds.includes(p.id))
+
+const features = [
+  {
+    icon: '👐',
+    title: '純手工製作',
+    desc: '每一條麵包都由師傅親手揉製，不用麵包機，保留最真實的手感與溫度',
+  },
+  {
+    icon: '🌾',
+    title: '天然食材',
+    desc: '嚴選無添加麵粉、天然酵母及本地農產，拒絕人工色素與防腐劑',
+  },
+  {
+    icon: '⏰',
+    title: '每日新鮮出爐',
+    desc: '凌晨三點開始製作，確保您每天早晨都能買到最新鮮的麵包',
+  },
+]
+
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div>
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-amber-900 via-amber-800 to-amber-950 text-white py-20 px-4">
+        <div className="max-w-3xl mx-auto text-center">
+          <p className="text-amber-300 text-sm font-medium tracking-widest uppercase mb-4">
+            Artisan Bakery · 手工烘焙
           </p>
+          <h1 className="text-4xl sm:text-5xl font-bold leading-tight mb-6">
+            每一口，都是<br />
+            <span className="text-amber-300">用心烘焙的溫度</span>
+          </h1>
+          <p className="text-amber-100 text-lg leading-relaxed mb-10 max-w-xl mx-auto">
+            CC Baker 堅持每日手工製作，使用天然食材，
+            為您帶來最純粹的麵包香氣與口感。
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/menu"
+              className="bg-amber-400 hover:bg-amber-300 text-amber-950 font-bold px-8 py-3 rounded-full text-base transition-colors shadow-lg"
+            >
+              查看今日菜單 →
+            </Link>
+            <Link
+              href="/cart"
+              className="border border-amber-400 text-amber-300 hover:bg-amber-800 px-8 py-3 rounded-full text-base transition-colors font-medium"
+            >
+              我的購物車
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      {/* Features */}
+      <section className="py-14 px-4 bg-white">
+        <div className="max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+            {features.map(f => (
+              <div key={f.title} className="text-center px-4">
+                <div className="text-4xl mb-3">{f.icon}</div>
+                <h3 className="font-bold text-stone-800 mb-2">{f.title}</h3>
+                <p className="text-stone-500 text-sm leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </main>
+      </section>
+
+      {/* Featured Products */}
+      <section className="py-14 px-4 bg-amber-50">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <p className="text-amber-700 text-xs font-semibold tracking-widest uppercase mb-1">Today&apos;s Picks</p>
+              <h2 className="text-2xl font-bold text-stone-800">今日精選</h2>
+            </div>
+            <Link
+              href="/menu"
+              className="text-sm text-amber-700 hover:text-amber-900 font-medium transition-colors"
+            >
+              查看全部 →
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {featured.map(product => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Banner */}
+      <section className="bg-amber-800 text-white py-12 px-4 text-center">
+        <div className="max-w-xl mx-auto">
+          <h2 className="text-2xl font-bold mb-3">準備好訂購了嗎？</h2>
+          <p className="text-amber-200 mb-6 text-sm leading-relaxed">
+            瀏覽完整菜單，加入購物車，即可預訂您喜愛的麵包。<br />
+            每日限量，請盡早下單！
+          </p>
+          <Link
+            href="/menu"
+            className="inline-block bg-white text-amber-900 font-bold px-8 py-3 rounded-full hover:bg-amber-100 transition-colors"
+          >
+            立即選購
+          </Link>
+        </div>
+      </section>
     </div>
-  );
+  )
 }
