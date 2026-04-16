@@ -12,23 +12,18 @@ import {
 import { db } from './firebase'
 import { Product, seedProducts } from '../data/products'
 
-export async function addFirestoreProduct(
-  product: Omit<Product, 'id'> & { minQty?: number | null; maxQty?: number | null }
-) {
+export async function addFirestoreProduct(product: Omit<Product, 'id'>) {
   const data: Record<string, unknown> = { ...product, createdAt: serverTimestamp() }
-  if (data.minQty == null) delete data.minQty
-  if (data.maxQty == null) delete data.maxQty
+  // Firestore doesn't accept undefined values
+  Object.keys(data).forEach(k => data[k] === undefined && delete data[k])
   await addDoc(collection(db, 'products'), data)
 }
 
-export async function updateFirestoreProduct(
-  id: string,
-  product: Omit<Product, 'id'> & { minQty?: number | null; maxQty?: number | null }
-) {
+export async function updateFirestoreProduct(id: string, product: Omit<Product, 'id'>) {
   const data: Record<string, unknown> = { ...product }
-  // Explicitly remove optional fields when cleared
-  if ('minQty' in data && data.minQty == null) data.minQty = deleteField()
-  if ('maxQty' in data && data.maxQty == null) data.maxQty = deleteField()
+  // Convert undefined optional fields to deleteField() so Firestore removes them
+  if (product.minQty === undefined) data.minQty = deleteField()
+  if (product.maxQty === undefined) data.maxQty = deleteField()
   await updateDoc(doc(db, 'products', id), data)
 }
 

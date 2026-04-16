@@ -460,8 +460,8 @@ function ProductsTab() {
       category: form.category, icon: form.icon, bgColor: form.bgColor,
       variants: parsedVariants,
       addons: parsedAddons,
-      minQty: form.minQty ? Number(form.minQty) : null,
-      maxQty: form.maxQty ? Number(form.maxQty) : null,
+      minQty: form.minQty ? Number(form.minQty) : undefined,
+      maxQty: form.maxQty ? Number(form.maxQty) : undefined,
     }
   }
 
