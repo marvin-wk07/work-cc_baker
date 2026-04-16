@@ -27,7 +27,7 @@ export default function RootLayout({
           <main className="flex-1">{children}</main>
           <footer className="bg-amber-950 text-amber-200 text-center py-6 text-sm">
             <p>© 2026 CC Baker — 每日新鮮，用心製作</p>
-            <p className="mt-1 text-amber-400 text-xs">取貨時間：每日 09:00 – 18:00</p>
+            <p className="mt-1 text-amber-400 text-xs">出貨時間：每日 09:00 – 18:00</p>
           </footer>
         </CartProvider>
       </body>

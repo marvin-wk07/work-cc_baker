@@ -1,6 +1,5 @@
 import {
   collection,
-  addDoc,
   doc,
   updateDoc,
   deleteDoc,
@@ -9,6 +8,7 @@ import {
   orderBy,
   onSnapshot,
   getDocs,
+  runTransaction,
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore'
@@ -22,6 +22,7 @@ export interface Order {
   name: string
   phone: string
   date: string
+  shippingDateId?: string
   note: string
   items: { productId: string; name: string; price: number; quantity: number }[]
   totalPrice: number
@@ -33,6 +34,7 @@ export async function saveOrder(data: {
   name: string
   phone: string
   date: string
+  shippingDateId: string
   note: string
   items: CartItem[]
   totalPrice: number
@@ -49,15 +51,29 @@ export async function saveOrder(data: {
     }
   })
 
-  await addDoc(collection(db, 'orders'), {
-    name: data.name,
-    phone: data.phone,
-    date: data.date,
-    note: data.note,
-    items: orderItems,
-    totalPrice: data.totalPrice,
-    status: 'pending' as OrderStatus,
-    createdAt: serverTimestamp(),
+  const dateRef = doc(db, 'shippingDates', data.shippingDateId)
+  const orderRef = doc(collection(db, 'orders'))
+
+  await runTransaction(db, async (transaction) => {
+    const dateDoc = await transaction.get(dateRef)
+    if (!dateDoc.exists()) throw new Error('出貨日期不存在，請重新選擇')
+
+    const { maxOrders, orderCount } = dateDoc.data() as { maxOrders: number; orderCount: number }
+    if (orderCount >= maxOrders) throw new Error('此出貨日期已額滿，請選擇其他日期')
+
+    transaction.set(orderRef, {
+      name: data.name,
+      phone: data.phone,
+      date: data.date,
+      shippingDateId: data.shippingDateId,
+      note: data.note,
+      items: orderItems,
+      totalPrice: data.totalPrice,
+      status: 'pending' as OrderStatus,
+      createdAt: serverTimestamp(),
+    })
+
+    transaction.update(dateRef, { orderCount: orderCount + 1 })
   })
 }
 
@@ -79,10 +95,7 @@ export async function getOrdersByPhone(phone: string): Promise<Order[]> {
 export function subscribeOrders(callback: (orders: Order[]) => void) {
   const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'))
   return onSnapshot(q, snapshot => {
-    const orders = snapshot.docs.map(d => ({
-      id: d.id,
-      ...d.data(),
-    })) as Order[]
+    const orders = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Order[]
     callback(orders)
   })
 }

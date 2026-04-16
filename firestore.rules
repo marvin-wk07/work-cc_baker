@@ -2,17 +2,23 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Products — 所有人可讀（顯示菜單），只有登入管理員可以新增/修改/刪除
+    // Products — 所有人可讀，只有管理員可寫
     match /products/{productId} {
       allow read: if true;
       allow write: if request.auth != null;
     }
 
-    // Orders — 所有人可建立（下單）和讀取（電話查詢），只有管理員可修改/刪除
+    // Orders — 所有人可建立和讀取（電話查詢），只有管理員可修改/刪除
     match /orders/{orderId} {
       allow read:   if true;
       allow create: if true;
       allow update, delete: if request.auth != null;
+    }
+
+    // ShippingDates — 所有人可讀（顯示可選日期），只有管理員可寫
+    match /shippingDates/{dateId} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
   }
 }

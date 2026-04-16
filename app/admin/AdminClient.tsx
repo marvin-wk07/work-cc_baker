@@ -11,12 +11,20 @@ import {
   deleteFirestoreProduct,
   seedMenuProducts,
 } from '../lib/products'
+import {
+  subscribeShippingDates,
+  addShippingDate,
+  updateShippingDate,
+  deleteShippingDate,
+  formatShippingDate,
+  ShippingDate,
+} from '../lib/shippingDates'
 import { Product, categories } from '../data/products'
 
 // ── Constants ────────────────────────────────────────────────
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
-  pending: '待確認', confirmed: '已確認', ready: '可取貨', completed: '已完成', cancelled: '已取消',
+  pending: '待確認', confirmed: '已確認', ready: '可出貨', completed: '已完成', cancelled: '已取消',
 }
 const STATUS_COLOR: Record<OrderStatus, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -29,7 +37,7 @@ const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
   pending: 'confirmed', confirmed: 'ready', ready: 'completed',
 }
 const NEXT_LABEL: Partial<Record<OrderStatus, string>> = {
-  pending: '確認訂單', confirmed: '通知取貨', ready: '完成',
+  pending: '確認訂單', confirmed: '通知出貨', ready: '完成',
 }
 
 const ICON_OPTIONS = ['🍞', '🥐', '🥯', '🍥', '🫓', '🧁', '🍰', '🥖', '🥟', '🌿']
@@ -159,7 +167,7 @@ function OrdersTab() {
                   </div>
                   <div className="text-sm text-stone-500 flex gap-3 flex-wrap">
                     <span>📞 {order.phone}</span>
-                    <span>📅 取貨：{order.date}</span>
+                    <span>📅 出貨：{order.date}</span>
                     {order.createdAt && (
                       <span>🕐 {new Date(order.createdAt.seconds * 1000).toLocaleString('zh-HK', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                     )}
@@ -630,10 +638,194 @@ function ProductsTab() {
   )
 }
 
+// ── Shipping Dates Tab ───────────────────────────────────────
+
+function ShippingDatesTab() {
+  const [dates, setDates] = useState<ShippingDate[]>([])
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [addForm, setAddForm] = useState({ date: '', maxOrders: '3', note: '' })
+  const [editForm, setEditForm] = useState({ maxOrders: '', note: '' })
+  const [saving, setSaving] = useState(false)
+
+  const today = new Date().toISOString().split('T')[0]
+
+  useEffect(() => {
+    const unsub = subscribeShippingDates(setDates)
+    return () => unsub()
+  }, [])
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!addForm.date || !addForm.maxOrders) return
+    setSaving(true)
+    try {
+      await addShippingDate({
+        date: addForm.date,
+        maxOrders: Number(addForm.maxOrders),
+        note: addForm.note.trim(),
+      })
+      setAddForm({ date: '', maxOrders: '3', note: '' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const startEdit = (d: ShippingDate) => {
+    setEditingId(d.id)
+    setEditForm({ maxOrders: String(d.maxOrders), note: d.note })
+  }
+
+  const handleEdit = async (id: string) => {
+    setSaving(true)
+    try {
+      await updateShippingDate(id, { maxOrders: Number(editForm.maxOrders), note: editForm.note.trim() })
+      setEditingId(null)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const upcoming = dates.filter(d => d.date >= today)
+  const past = dates.filter(d => d.date < today)
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Add Form */}
+      <div className="bg-white rounded-2xl border border-amber-100 p-5 shadow-sm">
+        <h3 className="font-bold text-stone-800 mb-4">新增出貨日期</h3>
+        <form onSubmit={handleAdd} className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-stone-600 mb-1">日期 *</label>
+              <input type="date" value={addForm.date} min={today}
+                onChange={e => setAddForm(f => ({ ...f, date: e.target.value }))} required
+                className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-stone-600 mb-1">訂單上限 *</label>
+              <input type="number" value={addForm.maxOrders} min={1}
+                onChange={e => setAddForm(f => ({ ...f, maxOrders: e.target.value }))} required
+                className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-stone-600 mb-1">備註（選填，例：限量預購）</label>
+            <input type="text" value={addForm.note} placeholder="例：限量預購、父親節特供"
+              onChange={e => setAddForm(f => ({ ...f, note: e.target.value }))}
+              className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition" />
+          </div>
+          <button type="submit" disabled={saving}
+            className="bg-amber-800 hover:bg-amber-700 disabled:bg-amber-300 text-white font-bold py-2.5 rounded-xl transition-colors text-sm">
+            {saving ? '新增中...' : '＋ 新增日期'}
+          </button>
+        </form>
+      </div>
+
+      {/* Upcoming Dates */}
+      <div className="bg-white rounded-2xl border border-amber-100 p-5 shadow-sm">
+        <h3 className="font-bold text-stone-800 mb-4">
+          即將出貨
+          {upcoming.length > 0 && <span className="ml-2 text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-normal">{upcoming.length} 個日期</span>}
+        </h3>
+        {upcoming.length === 0 ? (
+          <p className="text-stone-400 text-sm text-center py-6">尚未設定出貨日期</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {upcoming.map(d => {
+              const remaining = d.maxOrders - d.orderCount
+              const isFull = remaining <= 0
+              return (
+                <div key={d.id}>
+                  <div className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${isFull ? 'border-red-100 bg-red-50' : 'border-amber-50 hover:bg-amber-50'}`}>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-stone-800 text-sm">{formatShippingDate(d.date)}</p>
+                      {d.note && <p className="text-xs text-stone-400 mt-0.5">{d.note}</p>}
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="flex-1 bg-stone-100 rounded-full h-1.5 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${isFull ? 'bg-red-400' : remaining <= 1 ? 'bg-orange-400' : 'bg-green-400'}`}
+                            style={{ width: `${Math.min(100, (d.orderCount / d.maxOrders) * 100)}%` }}
+                          />
+                        </div>
+                        <span className={`text-xs font-medium shrink-0 ${isFull ? 'text-red-500' : remaining <= 1 ? 'text-orange-500' : 'text-stone-500'}`}>
+                          {d.orderCount} / {d.maxOrders} 單{isFull ? '（已額滿）' : ''}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <button onClick={() => editingId === d.id ? setEditingId(null) : startEdit(d)}
+                        className={`text-xs px-3 py-1.5 rounded-full transition-colors ${editingId === d.id ? 'bg-amber-200 text-amber-900' : 'bg-stone-100 hover:bg-amber-100 text-stone-600'}`}>
+                        編輯
+                      </button>
+                      {confirmDelete === d.id ? (
+                        <>
+                          <button onClick={() => { deleteShippingDate(d.id); setConfirmDelete(null) }}
+                            className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-full">確認</button>
+                          <button onClick={() => setConfirmDelete(null)}
+                            className="text-xs bg-stone-200 text-stone-600 px-3 py-1.5 rounded-full">取消</button>
+                        </>
+                      ) : (
+                        <button onClick={() => setConfirmDelete(d.id)}
+                          className="text-xs bg-stone-100 hover:bg-red-100 text-stone-500 hover:text-red-500 px-3 py-1.5 rounded-full transition-colors">
+                          刪除
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {editingId === d.id && (
+                    <div className="mt-2 p-4 border border-amber-200 rounded-xl bg-amber-50 flex gap-3 items-end">
+                      <div>
+                        <label className="block text-xs font-medium text-stone-600 mb-1">訂單上限</label>
+                        <input type="number" value={editForm.maxOrders} min={d.orderCount || 1}
+                          onChange={e => setEditForm(f => ({ ...f, maxOrders: e.target.value }))}
+                          className="w-24 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white focus:outline-none focus:border-amber-400 transition" />
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-xs font-medium text-stone-600 mb-1">備註</label>
+                        <input type="text" value={editForm.note} placeholder="備註（選填）"
+                          onChange={e => setEditForm(f => ({ ...f, note: e.target.value }))}
+                          className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-amber-400 transition" />
+                      </div>
+                      <button onClick={() => handleEdit(d.id)} disabled={saving}
+                        className="bg-amber-800 hover:bg-amber-700 disabled:bg-amber-300 text-white font-bold px-4 py-2 rounded-xl transition-colors text-sm shrink-0">
+                        儲存
+                      </button>
+                      <button onClick={() => setEditingId(null)}
+                        className="bg-stone-100 text-stone-600 px-4 py-2 rounded-xl text-sm shrink-0">取消</button>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Past Dates */}
+      {past.length > 0 && (
+        <div className="bg-white rounded-2xl border border-amber-100 p-5 shadow-sm opacity-60">
+          <h3 className="font-bold text-stone-500 mb-3 text-sm">過往日期</h3>
+          <div className="flex flex-col gap-1">
+            {past.slice(-5).reverse().map(d => (
+              <div key={d.id} className="flex items-center justify-between px-3 py-2 rounded-lg text-sm">
+                <span className="text-stone-500">{formatShippingDate(d.date)}</span>
+                <span className="text-xs text-stone-400">{d.orderCount} / {d.maxOrders} 單</span>
+                <button onClick={() => deleteShippingDate(d.id)}
+                  className="text-xs text-stone-400 hover:text-red-400 ml-2 transition-colors">刪除</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Dashboard ────────────────────────────────────────────────
 
 function Dashboard({ user }: { user: User }) {
-  const [tab, setTab] = useState<'orders' | 'products'>('orders')
+  const [tab, setTab] = useState<'orders' | 'products' | 'shipping'>('orders')
   return (
     <div className="min-h-screen bg-amber-50">
       <header className="bg-amber-950 text-white px-6 py-4 flex items-center justify-between">
@@ -646,15 +838,15 @@ function Dashboard({ user }: { user: User }) {
         </div>
       </header>
       <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="flex gap-2 mb-6">
-          {(['orders', 'products'] as const).map(t => (
+        <div className="flex gap-2 mb-6 flex-wrap">
+          {(['orders', 'products', 'shipping'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
               className={`px-5 py-2 rounded-full font-medium text-sm transition-colors ${tab === t ? 'bg-amber-800 text-white shadow-sm' : 'bg-white text-stone-600 border border-amber-200 hover:bg-amber-50'}`}>
-              {t === 'orders' ? '訂單管理' : '商品管理'}
+              {t === 'orders' ? '訂單管理' : t === 'products' ? '商品管理' : '出貨日期'}
             </button>
           ))}
         </div>
-        {tab === 'orders' ? <OrdersTab /> : <ProductsTab />}
+        {tab === 'orders' ? <OrdersTab /> : tab === 'products' ? <ProductsTab /> : <ShippingDatesTab />}
       </div>
     </div>
   )

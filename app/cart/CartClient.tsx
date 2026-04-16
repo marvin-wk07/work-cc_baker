@@ -1,32 +1,41 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useCart } from '../context/CartContext'
 import { saveOrder } from '../lib/orders'
+import { subscribeShippingDates, formatShippingDate, ShippingDate } from '../lib/shippingDates'
 
 type FormData = {
   name: string
   phone: string
-  date: string
   note: string
 }
 
 export default function CartClient() {
   const { items, removeItem, updateQuantity, clearCart, totalItems, totalPrice } = useCart()
-  const [form, setForm] = useState<FormData>({ name: '', phone: '', date: '', note: '' })
+  const [form, setForm] = useState<FormData>({ name: '', phone: '', note: '' })
+  const [selectedShipping, setSelectedShipping] = useState<ShippingDate | null>(null)
+  const [shippingDates, setShippingDates] = useState<ShippingDate[]>([])
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [errors, setErrors] = useState<Partial<FormData>>({})
+  const [errors, setErrors] = useState<Partial<FormData & { date: string }>>({})
 
   const today = new Date().toISOString().split('T')[0]
 
+  useEffect(() => {
+    const unsub = subscribeShippingDates(dates => {
+      setShippingDates(dates.filter(d => d.date >= today))
+    })
+    return () => unsub()
+  }, [])
+
   const validate = () => {
-    const e: Partial<FormData> = {}
+    const e: Partial<FormData & { date: string }> = {}
     if (!form.name.trim()) e.name = '請填寫姓名'
     if (!form.phone.trim()) e.phone = '請填寫電話'
     else if (!/^[0-9+\-\s]{8,15}$/.test(form.phone.trim())) e.phone = '請輸入有效電話號碼'
-    if (!form.date) e.date = '請選擇取貨日期'
+    if (!selectedShipping) e.date = '請選擇出貨日期'
     return e
   }
 
@@ -39,11 +48,17 @@ export default function CartClient() {
     }
     setSubmitting(true)
     try {
-      await saveOrder({ ...form, items, totalPrice })
+      await saveOrder({
+        ...form,
+        date: selectedShipping!.date,
+        shippingDateId: selectedShipping!.id,
+        items,
+        totalPrice,
+      })
       clearCart()
       setSubmitted(true)
-    } catch {
-      alert('送出失敗，請稍後再試')
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '送出失敗，請稍後再試')
     } finally {
       setSubmitting(false)
     }
@@ -55,7 +70,7 @@ export default function CartClient() {
         <div className="text-6xl mb-6">🎉</div>
         <h2 className="text-2xl font-bold text-stone-800 mb-3">訂單已收到！</h2>
         <p className="text-stone-500 mb-2">
-          我們已收到您的訂單，將在取貨前一天以電話確認。
+          我們已收到您的訂單，將在出貨前一天以電話確認。
         </p>
         <p className="text-amber-700 font-medium mb-8">感謝您選擇 CC Baker 🍞</p>
         <Link
@@ -99,7 +114,7 @@ export default function CartClient() {
         <ul>
           {items.map(({ product, quantity, variant, addon, cartKey }) => (
             <li
-              key={product.id}
+              key={cartKey}
               className="flex items-center gap-4 px-5 py-4 border-b border-amber-50 last:border-b-0"
             >
               <div
@@ -155,7 +170,7 @@ export default function CartClient() {
 
       {/* Order Form */}
       <section className="bg-white rounded-2xl shadow-sm border border-amber-100 p-5">
-        <h2 className="font-semibold text-stone-800 mb-4">取貨資料</h2>
+        <h2 className="font-semibold text-stone-800 mb-4">出貨資料</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
             <label className="block text-sm font-medium text-stone-700 mb-1">
@@ -185,19 +200,50 @@ export default function CartClient() {
             {errors.phone && <p className="text-red-400 text-xs mt-1">{errors.phone}</p>}
           </div>
 
+          {/* Shipping Date Selector */}
           <div>
-            <label className="block text-sm font-medium text-stone-700 mb-1">
-              取貨日期 <span className="text-red-400">*</span>
+            <label className="block text-sm font-medium text-stone-700 mb-2">
+              出貨日期 <span className="text-red-400">*</span>
             </label>
-            <input
-              type="date"
-              value={form.date}
-              min={today}
-              onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
-              className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition"
-            />
+            {shippingDates.length === 0 ? (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+                目前尚無可選的出貨日期，請稍後再試或聯絡我們
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                {shippingDates.map(sd => {
+                  const remaining = sd.maxOrders - sd.orderCount
+                  const isFull = remaining <= 0
+                  const isSelected = selectedShipping?.id === sd.id
+                  return (
+                    <button
+                      key={sd.id}
+                      type="button"
+                      disabled={isFull}
+                      onClick={() => { setSelectedShipping(sd); setErrors(e => ({ ...e, date: undefined })) }}
+                      className={`p-3 rounded-xl border text-left transition-all ${
+                        isFull
+                          ? 'border-stone-100 bg-stone-50 opacity-50 cursor-not-allowed'
+                          : isSelected
+                          ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-300'
+                          : 'border-amber-100 bg-white hover:border-amber-300 hover:bg-amber-50'
+                      }`}
+                    >
+                      <p className={`text-sm font-semibold leading-tight ${isSelected ? 'text-amber-900' : 'text-stone-800'}`}>
+                        {formatShippingDate(sd.date)}
+                      </p>
+                      {sd.note && (
+                        <p className="text-xs text-stone-400 mt-0.5">{sd.note}</p>
+                      )}
+                      <p className={`text-xs mt-1 font-medium ${isFull ? 'text-red-400' : remaining <= 1 ? 'text-orange-500' : 'text-green-600'}`}>
+                        {isFull ? '已額滿' : `剩餘 ${remaining} 單`}
+                      </p>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
             {errors.date && <p className="text-red-400 text-xs mt-1">{errors.date}</p>}
-            <p className="text-xs text-stone-400 mt-1">取貨時間：09:00 – 18:00</p>
           </div>
 
           <div>

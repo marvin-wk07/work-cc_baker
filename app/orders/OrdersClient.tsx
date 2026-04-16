@@ -92,7 +92,7 @@ export default function OrdersClient() {
                     <div>
                       <p className="font-bold text-stone-800">{order.name}</p>
                       <div className="flex gap-3 text-xs text-stone-400 mt-1 flex-wrap">
-                        <span>📅 取貨：{order.date}</span>
+                        <span>📅 出貨：{order.date}</span>
                         {order.createdAt && (
                           <span>🕐 下單：{new Date(order.createdAt.seconds * 1000).toLocaleString('zh-TW', {
                             month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'
