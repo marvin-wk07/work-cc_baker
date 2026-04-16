@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useCart } from '../context/CartContext'
+import { saveOrder } from '../lib/orders'
 
 type FormData = {
   name: string
@@ -15,6 +16,7 @@ export default function CartClient() {
   const { items, removeItem, updateQuantity, clearCart, totalItems, totalPrice } = useCart()
   const [form, setForm] = useState<FormData>({ name: '', phone: '', date: '', note: '' })
   const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors] = useState<Partial<FormData>>({})
 
   const today = new Date().toISOString().split('T')[0]
@@ -28,15 +30,23 @@ export default function CartClient() {
     return e
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const errs = validate()
     if (Object.keys(errs).length > 0) {
       setErrors(errs)
       return
     }
-    setSubmitted(true)
-    clearCart()
+    setSubmitting(true)
+    try {
+      await saveOrder({ ...form, items, totalPrice })
+      clearCart()
+      setSubmitted(true)
+    } catch {
+      alert('送出失敗，請稍後再試')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   if (submitted) {
@@ -198,9 +208,10 @@ export default function CartClient() {
             </div>
             <button
               type="submit"
-              className="w-full bg-amber-800 hover:bg-amber-700 text-white font-bold py-3.5 rounded-2xl text-base transition-colors shadow-sm"
+              disabled={submitting}
+              className="w-full bg-amber-800 hover:bg-amber-700 disabled:bg-amber-300 text-white font-bold py-3.5 rounded-2xl text-base transition-colors shadow-sm"
             >
-              確認訂單 — NT$ {totalPrice}
+              {submitting ? '送出中...' : `確認訂單 — NT$ ${totalPrice}`}
             </button>
             <p className="text-center text-xs text-stone-400 mt-3">
               送出後我們會以電話與您確認訂單
