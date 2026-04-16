@@ -132,7 +132,7 @@ export default function CartClient() {
         </div>
         <ul>
           {items.map(({ product, quantity, variant, addon, cartKey }) => {
-            const itemCapacity = product.capacity ?? 1
+            const itemCapacity = product.capacity ?? 10
             // Disable + if adding one more would exceed remaining capacity for selected date
             const wouldExceed = remainingCapacity !== null
               && totalCapacity + itemCapacity > remainingCapacity

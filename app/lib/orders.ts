@@ -56,7 +56,7 @@ export async function saveOrder(data: {
 
   // Total capacity of this order
   const orderCapacity = data.items.reduce(
-    (sum, i) => sum + (i.product.capacity ?? 1) * i.quantity, 0
+    (sum, i) => sum + (i.product.capacity ?? 10) * i.quantity, 0
   )
 
   await runTransaction(db, async (transaction) => {

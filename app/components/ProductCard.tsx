@@ -15,6 +15,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const [selectedAddon, setSelectedAddon] = useState<ProductAddon | undefined>(undefined)
   const minQty = product.minQty ?? 1
   const maxQty = product.maxQty
+  const capacity = product.capacity ?? 10
 
   const [qty, setQty] = useState(minQty)
   const [added, setAdded] = useState(false)
@@ -22,6 +23,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const basePrice = selectedVariant?.price ?? product.price
   const addonPrice = selectedAddon?.price ?? 0
   const unitPrice = basePrice + addonPrice
+  const totalCapacity = capacity * qty
 
   const handleAdd = () => {
     addItem(product, selectedVariant, selectedAddon, qty)
@@ -98,23 +100,26 @@ export default function ProductCard({ product }: { product: Product }) {
           </div>
         )}
 
-        {/* Price */}
-        {!hasVariants && (
-          <div className="font-bold text-amber-800 text-sm">
-            NT$ {unitPrice}
-            {addonPrice > 0 && (
-              <span className="text-xs font-normal text-stone-400 ml-1">
-                ({product.price} + {addonPrice})
-              </span>
-            )}
-          </div>
-        )}
+        {/* Price + Capacity */}
+        <div className="flex items-center justify-between gap-1">
+          {!hasVariants && (
+            <div className="font-bold text-amber-800 text-sm">
+              NT$ {unitPrice}
+              {addonPrice > 0 && (
+                <span className="text-xs font-normal text-stone-400 ml-1">
+                  ({product.price} + {addonPrice})
+                </span>
+              )}
+            </div>
+          )}
+          {hasVariants && <div />}
+          <span className="text-xs text-stone-400 shrink-0">
+            製作能量 <span className="font-medium text-stone-500">{capacity}</span>
+          </span>
+        </div>
 
         {/* Quantity + Add */}
-        <div className="flex items-center gap-2 mt-1">
-          {maxQty !== undefined && (
-            <p className="text-xs text-stone-400">限購 {maxQty} 件</p>
-          )}
+        <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 border border-amber-200 rounded-full overflow-hidden">
             <button
               onClick={() => setQty(q => Math.max(minQty, q - 1))}
@@ -132,6 +137,12 @@ export default function ProductCard({ product }: { product: Product }) {
               +
             </button>
           </div>
+          {/* Running capacity total when qty > 1 */}
+          {qty > 1 && (
+            <span className="text-xs text-stone-400 shrink-0">
+              能量 <span className="font-semibold text-stone-500">{totalCapacity}</span>
+            </span>
+          )}
           <button
             onClick={handleAdd}
             className={`flex-1 text-xs py-1.5 rounded-full font-medium transition-all ${
@@ -143,6 +154,9 @@ export default function ProductCard({ product }: { product: Product }) {
             {added ? '已加入 ✓' : `加入 NT$${unitPrice * qty}`}
           </button>
         </div>
+        {maxQty !== undefined && (
+          <p className="text-xs text-stone-400 text-right -mt-1">限購 {maxQty} 件</p>
+        )}
       </div>
     </div>
   )
