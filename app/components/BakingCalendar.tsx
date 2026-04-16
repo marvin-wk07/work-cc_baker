@@ -74,7 +74,7 @@ export default function BakingCalendar() {
                   isFull
                     ? 'bg-stone-50 border-stone-100 opacity-60'
                     : isToday
-                    ? 'bg-orange-50 border-amber-200 shadow-sm'
+                    ? 'bg-orange-100 border-amber-200 shadow-sm'
                     : 'bg-white border-amber-100 hover:shadow-sm'
                 }`}
               >

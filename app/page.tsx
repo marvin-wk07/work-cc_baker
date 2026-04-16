@@ -23,7 +23,7 @@ export default function HomePage() {
   return (
     <div>
       {/* Hero */}
-      <section className="bg-gradient-to-br from-orange-100 via-orange-50 to-white py-20 px-4">
+      <section className="bg-gradient-to-br from-orange-200 via-orange-100 to-white py-20 px-4">
         <div className="max-w-3xl mx-auto text-center">
           <p className="text-amber-600 text-sm font-medium tracking-widest uppercase mb-4">
             Artisan Bakery · 手工烘焙
@@ -45,7 +45,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="/cart"
-              className="border border-amber-200 text-amber-600 hover:bg-orange-50 px-8 py-3 rounded-full text-base transition-colors font-medium"
+              className="border border-amber-200 text-amber-600 hover:bg-orange-100 px-8 py-3 rounded-full text-base transition-colors font-medium"
             >
               我的購物車
             </Link>
@@ -54,7 +54,7 @@ export default function HomePage() {
       </section>
 
       {/* Features */}
-      <section className="py-14 px-4 bg-orange-50">
+      <section className="py-14 px-4 bg-orange-100">
         <div className="max-w-4xl mx-auto">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
             {features.map(f => (
@@ -81,7 +81,7 @@ export default function HomePage() {
           </p>
           <Link
             href="/menu"
-            className="inline-block bg-white text-amber-700 font-bold px-8 py-3 rounded-full hover:bg-orange-50 transition-colors"
+            className="inline-block bg-white text-amber-700 font-bold px-8 py-3 rounded-full hover:bg-orange-100 transition-colors"
           >
             立即選購
           </Link>
