@@ -16,7 +16,7 @@ export default function Navbar() {
           <Link href="/menu" className="hover:text-amber-300 transition-colors">
             菜單
           </Link>
-          <Link href="/orders" className="hover:text-amber-300 transition-colors hidden sm:block">
+          <Link href="/orders" className="hover:text-amber-300 transition-colors">
             查訂單
           </Link>
           <CartButton />
