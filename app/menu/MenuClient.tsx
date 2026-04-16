@@ -45,8 +45,8 @@ export default function MenuClient() {
           onClick={() => setView('shop')}
           className={`px-5 py-2 rounded-full font-medium text-sm transition-colors ${
             view === 'shop'
-              ? 'bg-amber-800 text-white shadow-sm'
-              : 'bg-white text-stone-600 border border-amber-200 hover:bg-amber-50'
+              ? 'bg-rose-400 text-white shadow-sm'
+              : 'bg-white text-stone-600 border border-rose-200 hover:bg-rose-50'
           }`}
         >
           🛍️ 選購商品
@@ -55,8 +55,8 @@ export default function MenuClient() {
           onClick={() => setView('image')}
           className={`px-5 py-2 rounded-full font-medium text-sm transition-colors ${
             view === 'image'
-              ? 'bg-amber-800 text-white shadow-sm'
-              : 'bg-white text-stone-600 border border-amber-200 hover:bg-amber-50'
+              ? 'bg-rose-400 text-white shadow-sm'
+              : 'bg-white text-stone-600 border border-rose-200 hover:bg-rose-50'
           }`}
         >
           📋 完整菜單圖
@@ -69,7 +69,7 @@ export default function MenuClient() {
           <p className="text-sm text-stone-500">點擊圖片可放大查看完整菜單</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {['/menu-p1.jpg', '/menu-p2.jpg'].map((src, i) => (
-              <a key={src} href={`${BASE_PATH}${src}`} target="_blank" rel="noopener noreferrer" className="block rounded-2xl overflow-hidden border border-amber-100 shadow-sm hover:shadow-md transition-shadow">
+              <a key={src} href={`${BASE_PATH}${src}`} target="_blank" rel="noopener noreferrer" className="block rounded-2xl overflow-hidden border border-rose-100 shadow-sm hover:shadow-md transition-shadow">
                 <Image
                   src={src}
                   alt={`菜單第 ${i + 1} 頁`}
@@ -85,15 +85,15 @@ export default function MenuClient() {
         /* ── Shop View ── */
         <div>
           {/* Category Filter */}
-          <div className="flex flex-wrap gap-2 mb-8 sticky top-[57px] bg-amber-50 py-3 z-10 -mx-4 px-4 border-b border-amber-100">
+          <div className="flex flex-wrap gap-2 mb-8 sticky top-[57px] bg-rose-50 py-3 z-10 -mx-4 px-4 border-b border-rose-100">
             {categories.map(cat => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
                 className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
                   activeCategory === cat
-                    ? 'bg-amber-800 text-white shadow-sm'
-                    : 'bg-white text-stone-600 hover:bg-amber-100 border border-amber-200'
+                    ? 'bg-rose-400 text-white shadow-sm'
+                    : 'bg-white text-stone-600 hover:bg-rose-50 border border-rose-200'
                 }`}
               >
                 {cat}
@@ -109,8 +109,8 @@ export default function MenuClient() {
                 if (catProducts.length === 0) return null
                 return (
                   <section key={cat}>
-                    <h2 className="text-base font-bold text-amber-900 mb-4 flex items-center gap-2">
-                      <span className="w-1 h-5 bg-amber-600 rounded-full inline-block" />
+                    <h2 className="text-base font-bold text-stone-700 mb-4 flex items-center gap-2">
+                      <span className="w-1 h-5 bg-rose-300 rounded-full inline-block" />
                       {cat}
                     </h2>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">

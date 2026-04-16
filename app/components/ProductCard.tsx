@@ -33,7 +33,7 @@ export default function ProductCard({ product }: { product: Product }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-amber-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-2xl shadow-sm border border-rose-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
       <div
         className="h-28 flex items-center justify-center text-5xl"
         style={{ backgroundColor: product.bgColor }}
@@ -43,7 +43,7 @@ export default function ProductCard({ product }: { product: Product }) {
       <div className="p-3 flex flex-col flex-1 gap-2">
         <div className="flex items-start justify-between gap-1">
           <h3 className="font-semibold text-stone-800 text-sm leading-tight">{product.name}</h3>
-          <span className="text-xs bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full whitespace-nowrap shrink-0">
+          <span className="text-xs bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded-full whitespace-nowrap shrink-0">
             {product.category}
           </span>
         </div>
@@ -58,8 +58,8 @@ export default function ProductCard({ product }: { product: Product }) {
                 onClick={() => setSelectedVariant(v)}
                 className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
                   selectedVariant?.label === v.label
-                    ? 'bg-amber-800 text-white'
-                    : 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
+                    ? 'bg-rose-400 text-white'
+                    : 'bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100'
                 }`}
               >
                 {v.label}・NT${v.price}
@@ -71,7 +71,7 @@ export default function ProductCard({ product }: { product: Product }) {
         {/* Addon selector */}
         {hasAddons && (
           <div>
-            <p className="text-xs text-stone-400 mb-1">加內餡 <span className="text-amber-600">(+NT${product.addons![0].price})</span></p>
+            <p className="text-xs text-stone-400 mb-1">加內餡 <span className="text-rose-400">(+NT${product.addons![0].price})</span></p>
             <div className="flex gap-1 flex-wrap">
               <button
                 onClick={() => setSelectedAddon(undefined)}
@@ -103,7 +103,7 @@ export default function ProductCard({ product }: { product: Product }) {
         {/* Price + Capacity */}
         <div className="flex items-center justify-between gap-1">
           {!hasVariants && (
-            <div className="font-bold text-amber-800 text-sm">
+            <div className="font-bold text-rose-500 text-sm">
               NT$ {unitPrice}
               {addonPrice > 0 && (
                 <span className="text-xs font-normal text-stone-400 ml-1">
@@ -120,11 +120,11 @@ export default function ProductCard({ product }: { product: Product }) {
 
         {/* Quantity + Add */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 border border-amber-200 rounded-full overflow-hidden">
+          <div className="flex items-center gap-1 border border-rose-200 rounded-full overflow-hidden">
             <button
               onClick={() => setQty(q => Math.max(minQty, q - 1))}
               disabled={qty <= minQty}
-              className="w-7 h-7 flex items-center justify-center text-stone-600 hover:bg-amber-50 transition-colors font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+              className="w-7 h-7 flex items-center justify-center text-stone-600 hover:bg-rose-50 transition-colors font-bold disabled:opacity-30 disabled:cursor-not-allowed"
             >
               −
             </button>
@@ -132,7 +132,7 @@ export default function ProductCard({ product }: { product: Product }) {
             <button
               onClick={() => setQty(q => q + 1)}
               disabled={maxQty !== undefined && qty >= maxQty}
-              className="w-7 h-7 flex items-center justify-center text-stone-600 hover:bg-amber-50 transition-colors font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+              className="w-7 h-7 flex items-center justify-center text-stone-600 hover:bg-rose-50 transition-colors font-bold disabled:opacity-30 disabled:cursor-not-allowed"
             >
               +
             </button>
@@ -148,7 +148,7 @@ export default function ProductCard({ product }: { product: Product }) {
             className={`flex-1 text-xs py-1.5 rounded-full font-medium transition-all ${
               added
                 ? 'bg-green-500 text-white'
-                : 'bg-amber-800 hover:bg-amber-700 text-white'
+                : 'bg-rose-400 hover:bg-rose-300 text-white'
             }`}
           >
             {added ? '已加入 ✓' : `加入 NT$${unitPrice * qty}`}

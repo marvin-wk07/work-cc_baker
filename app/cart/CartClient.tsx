@@ -81,10 +81,10 @@ export default function CartClient() {
         <p className="text-stone-500 mb-2">
           我們已收到您的訂單，將在出貨前一天以電話確認。
         </p>
-        <p className="text-amber-700 font-medium mb-8">感謝您選擇 CC Baker 🍞</p>
+        <p className="text-rose-500 font-medium mb-8">感謝您選擇 CC Baker 🍞</p>
         <Link
           href="/menu"
-          className="inline-block bg-amber-800 hover:bg-amber-700 text-white font-medium px-8 py-3 rounded-full transition-colors"
+          className="inline-block bg-rose-500 hover:bg-rose-400 text-white font-medium px-8 py-3 rounded-full transition-colors"
         >
           繼續選購
         </Link>
@@ -99,7 +99,7 @@ export default function CartClient() {
         <p className="text-stone-500 mb-6 text-lg">購物車是空的</p>
         <Link
           href="/menu"
-          className="inline-block bg-amber-800 hover:bg-amber-700 text-white font-medium px-8 py-3 rounded-full transition-colors"
+          className="inline-block bg-rose-500 hover:bg-rose-400 text-white font-medium px-8 py-3 rounded-full transition-colors"
         >
           去逛逛菜單
         </Link>
@@ -110,8 +110,8 @@ export default function CartClient() {
   return (
     <div className="flex flex-col gap-8">
       {/* Cart Items */}
-      <section className="bg-white rounded-2xl shadow-sm border border-amber-100 overflow-hidden">
-        <div className="px-5 py-4 border-b border-amber-100 flex items-center justify-between">
+      <section className="bg-white rounded-2xl shadow-sm border border-rose-100 overflow-hidden">
+        <div className="px-5 py-4 border-b border-rose-100 flex items-center justify-between">
           <div>
             <h2 className="font-semibold text-stone-800">已選商品 ({totalItems} 件)</h2>
             {selectedShipping && (
@@ -140,7 +140,7 @@ export default function CartClient() {
             return (
               <li
                 key={cartKey}
-                className="flex items-center gap-4 px-5 py-4 border-b border-amber-50 last:border-b-0"
+                className="flex items-center gap-4 px-5 py-4 border-b border-rose-50 last:border-b-0"
               >
                 <div
                   className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
@@ -152,7 +152,7 @@ export default function CartClient() {
                   <p className="font-medium text-stone-800 text-sm truncate">{product.name}</p>
                   <div className="flex gap-1 flex-wrap mt-0.5">
                     {variant && (
-                      <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">{variant.label}</span>
+                      <span className="text-xs bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded-full font-medium">{variant.label}</span>
                     )}
                     {addon && (
                       <span className="text-xs bg-stone-100 text-stone-600 px-1.5 py-0.5 rounded-full font-medium">加{addon.label}</span>
@@ -161,14 +161,14 @@ export default function CartClient() {
                       <span className="text-xs bg-blue-50 text-blue-500 px-1.5 py-0.5 rounded-full font-medium">能量 {product.capacity}</span>
                     )}
                   </div>
-                  <p className="text-amber-700 text-sm font-semibold mt-0.5">
+                  <p className="text-rose-500 text-sm font-semibold mt-0.5">
                     NT$ {(variant?.price ?? product.price) + (addon?.price ?? 0)}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => updateQuantity(cartKey, quantity - 1)}
-                    className="w-7 h-7 rounded-full bg-amber-100 hover:bg-amber-200 text-stone-700 font-bold text-sm flex items-center justify-center transition-colors"
+                    className="w-7 h-7 rounded-full bg-rose-100 hover:bg-rose-200 text-stone-700 font-bold text-sm flex items-center justify-center transition-colors"
                   >
                     −
                   </button>
@@ -192,14 +192,14 @@ export default function CartClient() {
             )
           })}
         </ul>
-        <div className="px-5 py-4 bg-amber-50 flex justify-between items-center">
+        <div className="px-5 py-4 bg-rose-50 flex justify-between items-center">
           <span className="text-stone-600 font-medium">小計</span>
-          <span className="font-bold text-xl text-amber-900">NT$ {totalPrice}</span>
+          <span className="font-bold text-xl text-rose-700">NT$ {totalPrice}</span>
         </div>
       </section>
 
       {/* Order Form */}
-      <section className="bg-white rounded-2xl shadow-sm border border-amber-100 p-5">
+      <section className="bg-white rounded-2xl shadow-sm border border-rose-100 p-5">
         <h2 className="font-semibold text-stone-800 mb-4">出貨資料</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
@@ -211,7 +211,7 @@ export default function CartClient() {
               value={form.name}
               onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
               placeholder="請輸入姓名"
-              className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition"
+              className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition"
             />
             {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
           </div>
@@ -225,7 +225,7 @@ export default function CartClient() {
               value={form.phone}
               onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
               placeholder="0912-345-678"
-              className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition"
+              className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition"
             />
             {errors.phone && <p className="text-red-400 text-xs mt-1">{errors.phone}</p>}
           </div>
@@ -236,7 +236,7 @@ export default function CartClient() {
               出貨日期 <span className="text-red-400">*</span>
             </label>
             {shippingDates.length === 0 ? (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+              <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 text-sm text-rose-600">
                 目前尚無可選的出貨日期，請稍後再試或聯絡我們
               </div>
             ) : (
@@ -259,11 +259,11 @@ export default function CartClient() {
                         isFull
                           ? 'border-stone-100 bg-stone-50 opacity-50 cursor-not-allowed'
                           : isSelected
-                          ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-300'
-                          : 'border-amber-100 bg-white hover:border-amber-300 hover:bg-amber-50'
+                          ? 'border-rose-400 bg-rose-50 ring-2 ring-rose-200'
+                          : 'border-rose-100 bg-white hover:border-rose-300 hover:bg-rose-50'
                       }`}
                     >
-                      <p className={`text-sm font-semibold leading-tight ${isSelected ? 'text-amber-900' : 'text-stone-800'}`}>
+                      <p className={`text-sm font-semibold leading-tight ${isSelected ? 'text-rose-700' : 'text-stone-800'}`}>
                         {formatShippingDate(sd.date)}
                       </p>
                       {sd.note && (
@@ -293,7 +293,7 @@ export default function CartClient() {
               onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
               placeholder="例如：切片、不要袋等特別要求"
               rows={3}
-              className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition resize-none"
+              className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition resize-none"
             />
           </div>
 
@@ -310,7 +310,7 @@ export default function CartClient() {
             <button
               type="submit"
               disabled={submitting || isOverCapacity}
-              className="w-full bg-amber-800 hover:bg-amber-700 disabled:bg-amber-300 text-white font-bold py-3.5 rounded-2xl text-base transition-colors shadow-sm"
+              className="w-full bg-rose-500 hover:bg-rose-400 disabled:bg-rose-200 text-white font-bold py-3.5 rounded-2xl text-base transition-colors shadow-sm"
             >
               {submitting ? '送出中...' : `確認訂單 — NT$ ${totalPrice}`}
             </button>

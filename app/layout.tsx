@@ -21,13 +21,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-Hant" className={`${geist.variable} h-full`}>
-      <body className="min-h-full flex flex-col bg-amber-50 text-stone-800">
+      <body className="min-h-full flex flex-col bg-rose-50 text-stone-700">
         <CartProvider>
           <Navbar />
           <main className="flex-1">{children}</main>
-          <footer className="bg-amber-950 text-amber-200 text-center py-6 text-sm">
+          <footer className="bg-stone-700 text-stone-300 text-center py-6 text-sm">
             <p>© 2026 CC Baker — 每日新鮮，用心製作</p>
-            <p className="mt-1 text-amber-400 text-xs">出貨時間：每日 09:00 – 18:00</p>
+            <p className="mt-1 text-stone-400 text-xs">出貨時間：每日 09:00 – 18:00</p>
           </footer>
         </CartProvider>
       </body>
