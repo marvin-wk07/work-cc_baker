@@ -43,7 +43,7 @@ export default function ProductCard({ product }: { product: Product }) {
       <div className="p-3 flex flex-col flex-1 gap-2">
         <div className="flex items-start justify-between gap-1">
           <h3 className="font-semibold text-stone-800 text-sm leading-tight">{product.name}</h3>
-          <span className="text-xs bg-orange-100 text-amber-700 px-1.5 py-0.5 rounded-full whitespace-nowrap shrink-0">
+          <span className="text-xs bg-orange-200 text-amber-700 px-1.5 py-0.5 rounded-full whitespace-nowrap shrink-0">
             {product.category}
           </span>
         </div>
@@ -59,7 +59,7 @@ export default function ProductCard({ product }: { product: Product }) {
                 className={`text-xs px-2.5 py-1 rounded-full font-medium transition-colors ${
                   selectedVariant?.label === v.label
                     ? 'bg-amber-400 text-white'
-                    : 'bg-orange-100 text-amber-700 border border-amber-200 hover:bg-amber-100'
+                    : 'bg-orange-200 text-amber-700 border border-amber-200 hover:bg-amber-100'
                 }`}
               >
                 {v.label}・NT${v.price}
@@ -124,7 +124,7 @@ export default function ProductCard({ product }: { product: Product }) {
             <button
               onClick={() => setQty(q => Math.max(minQty, q - 1))}
               disabled={qty <= minQty}
-              className="w-7 h-7 flex items-center justify-center text-stone-600 hover:bg-orange-100 transition-colors font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+              className="w-7 h-7 flex items-center justify-center text-stone-600 hover:bg-orange-200 transition-colors font-bold disabled:opacity-30 disabled:cursor-not-allowed"
             >
               −
             </button>
@@ -132,7 +132,7 @@ export default function ProductCard({ product }: { product: Product }) {
             <button
               onClick={() => setQty(q => q + 1)}
               disabled={maxQty !== undefined && qty >= maxQty}
-              className="w-7 h-7 flex items-center justify-center text-stone-600 hover:bg-orange-100 transition-colors font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+              className="w-7 h-7 flex items-center justify-center text-stone-600 hover:bg-orange-200 transition-colors font-bold disabled:opacity-30 disabled:cursor-not-allowed"
             >
               +
             </button>

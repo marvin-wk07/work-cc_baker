@@ -152,7 +152,7 @@ export default function CartClient() {
                   <p className="font-medium text-stone-800 text-sm truncate">{product.name}</p>
                   <div className="flex gap-1 flex-wrap mt-0.5">
                     {variant && (
-                      <span className="text-xs bg-orange-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">{variant.label}</span>
+                      <span className="text-xs bg-orange-200 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">{variant.label}</span>
                     )}
                     {addon && (
                       <span className="text-xs bg-stone-100 text-stone-600 px-1.5 py-0.5 rounded-full font-medium">加{addon.label}</span>
@@ -192,7 +192,7 @@ export default function CartClient() {
             )
           })}
         </ul>
-        <div className="px-5 py-4 bg-orange-100 flex justify-between items-center">
+        <div className="px-5 py-4 bg-orange-200 flex justify-between items-center">
           <span className="text-stone-600 font-medium">小計</span>
           <span className="font-bold text-xl text-amber-700">NT$ {totalPrice}</span>
         </div>
@@ -236,7 +236,7 @@ export default function CartClient() {
               出貨日期 <span className="text-red-400">*</span>
             </label>
             {shippingDates.length === 0 ? (
-              <div className="bg-orange-100 border border-amber-200 rounded-xl p-4 text-sm text-amber-700">
+              <div className="bg-orange-200 border border-amber-200 rounded-xl p-4 text-sm text-amber-700">
                 目前尚無可選的出貨日期，請稍後再試或聯絡我們
               </div>
             ) : (
@@ -259,8 +259,8 @@ export default function CartClient() {
                         isFull
                           ? 'border-stone-100 bg-stone-50 opacity-50 cursor-not-allowed'
                           : isSelected
-                          ? 'border-amber-400 bg-orange-100 ring-2 ring-amber-200'
-                          : 'border-amber-100 bg-white hover:border-amber-200 hover:bg-orange-100'
+                          ? 'border-amber-400 bg-orange-200 ring-2 ring-amber-200'
+                          : 'border-amber-100 bg-white hover:border-amber-200 hover:bg-orange-200'
                       }`}
                     >
                       <p className={`text-sm font-semibold leading-tight ${isSelected ? 'text-amber-700' : 'text-stone-800'}`}>

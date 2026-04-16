@@ -21,7 +21,7 @@ export default function FeaturedSection() {
   if (!loaded || products.length === 0) return null
 
   return (
-    <section className="py-14 px-4 bg-orange-100">
+    <section className="py-14 px-4 bg-orange-200">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
