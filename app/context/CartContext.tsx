@@ -56,14 +56,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = (product: Product, variant?: ProductVariant, addon?: ProductAddon, qty = 1) => {
     const cartKey = makeCartKey(product.id, variant?.label, addon?.label)
+    const minQty = product.minQty ?? 1
+    const maxQty = product.maxQty
     setItems(prev => {
       const existing = prev.find(i => i.cartKey === cartKey)
       if (existing) {
+        const newQty = maxQty ? Math.min(existing.quantity + qty, maxQty) : existing.quantity + qty
         return prev.map(i =>
-          i.cartKey === cartKey ? { ...i, quantity: i.quantity + qty } : i
+          i.cartKey === cartKey ? { ...i, quantity: newQty } : i
         )
       }
-      return [...prev, { product, quantity: qty, variant, addon, cartKey }]
+      const initialQty = maxQty
+        ? Math.min(Math.max(qty, minQty), maxQty)
+        : Math.max(qty, minQty)
+      return [...prev, { product, quantity: initialQty, variant, addon, cartKey }]
     })
   }
 
@@ -72,13 +78,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }
 
   const updateQuantity = (cartKey: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeItem(cartKey)
-      return
-    }
-    setItems(prev =>
-      prev.map(i => (i.cartKey === cartKey ? { ...i, quantity } : i))
-    )
+    setItems(prev => {
+      const item = prev.find(i => i.cartKey === cartKey)
+      if (!item) return prev
+      const minQty = item.product.minQty ?? 1
+      const maxQty = item.product.maxQty
+      // Clicking below minQty (or 0) removes the item
+      if (quantity <= 0 || quantity < minQty) {
+        return prev.filter(i => i.cartKey !== cartKey)
+      }
+      const clampedQty = maxQty ? Math.min(quantity, maxQty) : quantity
+      return prev.map(i => i.cartKey === cartKey ? { ...i, quantity: clampedQty } : i)
+    })
   }
 
   const clearCart = () => setItems([])

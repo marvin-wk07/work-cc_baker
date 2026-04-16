@@ -19,6 +19,7 @@ import {
   formatShippingDate,
   ShippingDate,
 } from '../lib/shippingDates'
+import { subscribeOrderSettings, updateOrderSettings, OrderSettings } from '../lib/settings'
 import { Product, categories } from '../data/products'
 
 // ── Constants ────────────────────────────────────────────────
@@ -51,8 +52,9 @@ type AddonInput  = { label: string; price: string }
 type FormData = {
   name: string; description: string; price: string; category: string
   icon: string; bgColor: string; variants: VariantInput[]; addons: AddonInput[]
+  minQty: string; maxQty: string
 }
-const EMPTY_FORM: FormData = { name: '', description: '', price: '', category: '歐式麵包', icon: '🍞', bgColor: '#FEF3C7', variants: [], addons: [] }
+const EMPTY_FORM: FormData = { name: '', description: '', price: '', category: '歐式麵包', icon: '🍞', bgColor: '#FEF3C7', variants: [], addons: [], minQty: '', maxQty: '' }
 
 // ── Login ────────────────────────────────────────────────────
 
@@ -368,6 +370,22 @@ function ProductForm({
         )}
       </div>
 
+      {/* Quantity Limits */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-medium text-stone-600 mb-1">最少訂購數量（選填）</label>
+          <input type="number" value={form.minQty} min={1} placeholder="預設 1"
+            onChange={e => setForm(prev => ({ ...prev, minQty: e.target.value }))}
+            className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-stone-600 mb-1">最多訂購數量（選填）</label>
+          <input type="number" value={form.maxQty} min={1} placeholder="不限"
+            onChange={e => setForm(prev => ({ ...prev, maxQty: e.target.value }))}
+            className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition" />
+        </div>
+      </div>
+
       {/* Preview */}
       <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0" style={{ backgroundColor: form.bgColor }}>
@@ -442,6 +460,8 @@ function ProductsTab() {
       category: form.category, icon: form.icon, bgColor: form.bgColor,
       variants: parsedVariants,
       addons: parsedAddons,
+      minQty: form.minQty ? Number(form.minQty) : null,
+      maxQty: form.maxQty ? Number(form.maxQty) : null,
     }
   }
 
@@ -500,6 +520,8 @@ function ProductsTab() {
     bgColor: p.bgColor,
     variants: p.variants?.map(v => ({ label: v.label, price: String(v.price) })) ?? [],
     addons: p.addons?.map(a => ({ label: a.label, price: String(a.price) })) ?? [],
+    minQty: p.minQty !== undefined ? String(p.minQty) : '',
+    maxQty: p.maxQty !== undefined ? String(p.maxQty) : '',
   })
 
   return (
@@ -822,10 +844,73 @@ function ShippingDatesTab() {
   )
 }
 
+// ── Settings Tab ────────────────────────────────────────────
+
+function SettingsTab() {
+  const [settings, setSettings] = useState<OrderSettings>({ maxItemsPerOrder: 0 })
+  const [form, setForm] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    const unsub = subscribeOrderSettings(s => {
+      setSettings(s)
+      setForm(s.maxItemsPerOrder > 0 ? String(s.maxItemsPerOrder) : '')
+    })
+    return () => unsub()
+  }, [])
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      await updateOrderSettings({ maxItemsPerOrder: form ? Number(form) : 0 })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="bg-white rounded-2xl border border-amber-100 p-5 shadow-sm">
+        <h3 className="font-bold text-stone-800 mb-1">訂單設定</h3>
+        <p className="text-xs text-stone-400 mb-4">設定每筆訂單可購買的商品件數上限</p>
+        <form onSubmit={handleSave} className="flex flex-col gap-4 max-w-sm">
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-1">
+              每筆訂單最多件數
+            </label>
+            <input
+              type="number"
+              value={form}
+              min={0}
+              placeholder="留空或 0 表示不限制"
+              onChange={e => setForm(e.target.value)}
+              className="w-full border border-stone-200 rounded-xl px-4 py-2.5 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition"
+            />
+            <p className="text-xs text-stone-400 mt-1">
+              目前：{settings.maxItemsPerOrder > 0 ? `最多 ${settings.maxItemsPerOrder} 件` : '不限制'}
+            </p>
+          </div>
+          <button
+            type="submit"
+            disabled={saving}
+            className="bg-amber-800 hover:bg-amber-700 disabled:bg-amber-300 text-white font-bold py-2.5 rounded-xl transition-colors text-sm"
+          >
+            {saving ? '儲存中...' : saved ? '已儲存 ✓' : '儲存設定'}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 // ── Dashboard ────────────────────────────────────────────────
 
 function Dashboard({ user }: { user: User }) {
-  const [tab, setTab] = useState<'orders' | 'products' | 'shipping'>('orders')
+  const [tab, setTab] = useState<'orders' | 'products' | 'shipping' | 'settings'>('orders')
   return (
     <div className="min-h-screen bg-amber-50">
       <header className="bg-amber-950 text-white px-6 py-4 flex items-center justify-between">
@@ -839,14 +924,14 @@ function Dashboard({ user }: { user: User }) {
       </header>
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="flex gap-2 mb-6 flex-wrap">
-          {(['orders', 'products', 'shipping'] as const).map(t => (
+          {(['orders', 'products', 'shipping', 'settings'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
               className={`px-5 py-2 rounded-full font-medium text-sm transition-colors ${tab === t ? 'bg-amber-800 text-white shadow-sm' : 'bg-white text-stone-600 border border-amber-200 hover:bg-amber-50'}`}>
-              {t === 'orders' ? '訂單管理' : t === 'products' ? '商品管理' : '出貨日期'}
+              {t === 'orders' ? '訂單管理' : t === 'products' ? '商品管理' : t === 'shipping' ? '出貨日期' : '設定'}
             </button>
           ))}
         </div>
-        {tab === 'orders' ? <OrdersTab /> : tab === 'products' ? <ProductsTab /> : <ShippingDatesTab />}
+        {tab === 'orders' ? <OrdersTab /> : tab === 'products' ? <ProductsTab /> : tab === 'shipping' ? <ShippingDatesTab /> : <SettingsTab />}
       </div>
     </div>
   )

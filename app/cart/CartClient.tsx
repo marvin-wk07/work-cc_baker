@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useCart } from '../context/CartContext'
 import { saveOrder } from '../lib/orders'
 import { subscribeShippingDates, formatShippingDate, ShippingDate } from '../lib/shippingDates'
+import { subscribeOrderSettings, OrderSettings } from '../lib/settings'
 
 type FormData = {
   name: string
@@ -17,9 +18,10 @@ export default function CartClient() {
   const [form, setForm] = useState<FormData>({ name: '', phone: '', note: '' })
   const [selectedShipping, setSelectedShipping] = useState<ShippingDate | null>(null)
   const [shippingDates, setShippingDates] = useState<ShippingDate[]>([])
+  const [orderSettings, setOrderSettings] = useState<OrderSettings>({ maxItemsPerOrder: 0 })
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [errors, setErrors] = useState<Partial<FormData & { date: string }>>({})
+  const [errors, setErrors] = useState<Partial<FormData & { date: string; items: string }>>({})
 
   const today = new Date().toISOString().split('T')[0]
 
@@ -30,12 +32,20 @@ export default function CartClient() {
     return () => unsub()
   }, [])
 
+  useEffect(() => {
+    const unsub = subscribeOrderSettings(setOrderSettings)
+    return () => unsub()
+  }, [])
+
   const validate = () => {
-    const e: Partial<FormData & { date: string }> = {}
+    const e: Partial<FormData & { date: string; items: string }> = {}
     if (!form.name.trim()) e.name = '請填寫姓名'
     if (!form.phone.trim()) e.phone = '請填寫電話'
     else if (!/^[0-9+\-\s]{8,15}$/.test(form.phone.trim())) e.phone = '請輸入有效電話號碼'
     if (!selectedShipping) e.date = '請選擇出貨日期'
+    if (orderSettings.maxItemsPerOrder > 0 && totalItems > orderSettings.maxItemsPerOrder) {
+      e.items = `每筆訂單最多 ${orderSettings.maxItemsPerOrder} 件商品，目前共 ${totalItems} 件`
+    }
     return e
   }
 
@@ -103,7 +113,15 @@ export default function CartClient() {
       {/* Cart Items */}
       <section className="bg-white rounded-2xl shadow-sm border border-amber-100 overflow-hidden">
         <div className="px-5 py-4 border-b border-amber-100 flex items-center justify-between">
-          <h2 className="font-semibold text-stone-800">已選商品 ({totalItems} 件)</h2>
+          <h2 className="font-semibold text-stone-800">
+            已選商品 ({totalItems} 件
+            {orderSettings.maxItemsPerOrder > 0 && (
+              <span className={totalItems > orderSettings.maxItemsPerOrder ? ' text-red-500' : ' text-stone-400'}>
+                ／上限 {orderSettings.maxItemsPerOrder}
+              </span>
+            )}
+            )
+          </h2>
           <button
             onClick={clearCart}
             className="text-xs text-red-400 hover:text-red-600 transition-colors"
@@ -147,7 +165,8 @@ export default function CartClient() {
                 <span className="w-6 text-center font-medium text-sm">{quantity}</span>
                 <button
                   onClick={() => updateQuantity(cartKey, quantity + 1)}
-                  className="w-7 h-7 rounded-full bg-amber-100 hover:bg-amber-200 text-stone-700 font-bold text-sm flex items-center justify-center transition-colors"
+                  disabled={product.maxQty !== undefined && quantity >= product.maxQty}
+                  className="w-7 h-7 rounded-full bg-amber-100 hover:bg-amber-200 text-stone-700 font-bold text-sm flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   +
                 </button>
@@ -258,6 +277,11 @@ export default function CartClient() {
           </div>
 
           <div className="pt-2">
+            {errors.items && (
+              <div className="mb-3 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 text-sm text-red-600">
+                {errors.items}
+              </div>
+            )}
             <div className="flex justify-between items-center mb-4 text-sm text-stone-500">
               <span>商品合計</span>
               <span className="font-bold text-stone-800">NT$ {totalPrice}</span>

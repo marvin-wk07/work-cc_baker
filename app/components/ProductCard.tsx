@@ -13,7 +13,10 @@ export default function ProductCard({ product }: { product: Product }) {
     hasVariants ? product.variants![0] : undefined
   )
   const [selectedAddon, setSelectedAddon] = useState<ProductAddon | undefined>(undefined)
-  const [qty, setQty] = useState(1)
+  const minQty = product.minQty ?? 1
+  const maxQty = product.maxQty
+
+  const [qty, setQty] = useState(minQty)
   const [added, setAdded] = useState(false)
 
   const basePrice = selectedVariant?.price ?? product.price
@@ -23,7 +26,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const handleAdd = () => {
     addItem(product, selectedVariant, selectedAddon, qty)
     setAdded(true)
-    setQty(1)
+    setQty(minQty)
     setTimeout(() => setAdded(false), 1200)
   }
 
@@ -109,17 +112,22 @@ export default function ProductCard({ product }: { product: Product }) {
 
         {/* Quantity + Add */}
         <div className="flex items-center gap-2 mt-1">
+          {maxQty !== undefined && (
+            <p className="text-xs text-stone-400">限購 {maxQty} 件</p>
+          )}
           <div className="flex items-center gap-1 border border-amber-200 rounded-full overflow-hidden">
             <button
-              onClick={() => setQty(q => Math.max(1, q - 1))}
-              className="w-7 h-7 flex items-center justify-center text-stone-600 hover:bg-amber-50 transition-colors font-bold"
+              onClick={() => setQty(q => Math.max(minQty, q - 1))}
+              disabled={qty <= minQty}
+              className="w-7 h-7 flex items-center justify-center text-stone-600 hover:bg-amber-50 transition-colors font-bold disabled:opacity-30 disabled:cursor-not-allowed"
             >
               −
             </button>
             <span className="w-5 text-center text-sm font-medium text-stone-800">{qty}</span>
             <button
               onClick={() => setQty(q => q + 1)}
-              className="w-7 h-7 flex items-center justify-center text-stone-600 hover:bg-amber-50 transition-colors font-bold"
+              disabled={maxQty !== undefined && qty >= maxQty}
+              className="w-7 h-7 flex items-center justify-center text-stone-600 hover:bg-amber-50 transition-colors font-bold disabled:opacity-30 disabled:cursor-not-allowed"
             >
               +
             </button>

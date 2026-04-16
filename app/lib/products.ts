@@ -7,19 +7,29 @@ import {
   onSnapshot,
   serverTimestamp,
   getDocs,
+  deleteField,
 } from 'firebase/firestore'
 import { db } from './firebase'
 import { Product, seedProducts } from '../data/products'
 
-export async function addFirestoreProduct(product: Omit<Product, 'id'>) {
-  await addDoc(collection(db, 'products'), {
-    ...product,
-    createdAt: serverTimestamp(),
-  })
+export async function addFirestoreProduct(
+  product: Omit<Product, 'id'> & { minQty?: number | null; maxQty?: number | null }
+) {
+  const data: Record<string, unknown> = { ...product, createdAt: serverTimestamp() }
+  if (data.minQty == null) delete data.minQty
+  if (data.maxQty == null) delete data.maxQty
+  await addDoc(collection(db, 'products'), data)
 }
 
-export async function updateFirestoreProduct(id: string, product: Omit<Product, 'id'>) {
-  await updateDoc(doc(db, 'products', id), { ...product })
+export async function updateFirestoreProduct(
+  id: string,
+  product: Omit<Product, 'id'> & { minQty?: number | null; maxQty?: number | null }
+) {
+  const data: Record<string, unknown> = { ...product }
+  // Explicitly remove optional fields when cleared
+  if ('minQty' in data && data.minQty == null) data.minQty = deleteField()
+  if ('maxQty' in data && data.maxQty == null) data.maxQty = deleteField()
+  await updateDoc(doc(db, 'products', id), data)
 }
 
 export async function deleteFirestoreProduct(productId: string) {
