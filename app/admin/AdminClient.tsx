@@ -81,7 +81,7 @@ function LoginForm() {
       <div className="bg-white rounded-2xl shadow-sm border border-amber-100 p-8 w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="text-4xl mb-2">🍞</div>
-          <h1 className="text-xl font-bold text-stone-800">CC Baker 管理後台</h1>
+          <h1 className="text-xl font-bold text-stone-800">岐蓁手作烘培 管理後台</h1>
         </div>
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <div>
@@ -870,7 +870,7 @@ function Dashboard({ user }: { user: User }) {
     <div className="min-h-screen bg-amber-50">
       <header className="bg-amber-950 text-white px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2 font-bold text-lg">
-          <span>🍞</span><span>CC Baker 管理後台</span>
+          <span>🍞</span><span>岐蓁手作烘培 管理後台</span>
         </div>
         <div className="flex items-center gap-4 text-sm">
           <span className="text-amber-300 hidden sm:block">{user.email}</span>

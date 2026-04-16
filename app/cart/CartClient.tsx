@@ -81,7 +81,7 @@ export default function CartClient() {
         <p className="text-stone-500 mb-2">
           我們已收到您的訂單，將在出貨前一天以電話確認。
         </p>
-        <p className="text-amber-600 font-medium mb-8">感謝您選擇 CC Baker 🍞</p>
+        <p className="text-amber-600 font-medium mb-8">感謝您選擇岐蓁手作烘培 🍞</p>
         <Link
           href="/menu"
           className="inline-block bg-amber-400 hover:bg-amber-300 text-white font-medium px-8 py-3 rounded-full transition-colors"

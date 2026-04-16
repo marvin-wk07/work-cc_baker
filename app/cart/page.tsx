@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import CartClient from './CartClient'
 
 export const metadata: Metadata = {
-  title: '購物車 — CC Baker',
+  title: '購物車 — 岐蓁手作烘培',
   description: '查看您的購物車並完成訂單',
 }
 

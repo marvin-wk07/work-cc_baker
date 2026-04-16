@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import OrdersClient from './OrdersClient'
 
 export const metadata: Metadata = {
-  title: '查詢訂單 — CC Baker',
+  title: '查詢訂單 — 岐蓁手作烘培',
   description: '輸入電話號碼查看您的訂單狀態',
 }
 

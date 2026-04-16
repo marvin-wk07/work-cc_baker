@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import MenuClient from './MenuClient'
 
 export const metadata: Metadata = {
-  title: '菜單 — CC Baker',
-  description: '瀏覽 CC Baker 全部手工麵包，包含歐式麵包、法式糕點、吐司及特色麵包',
+  title: '菜單 — 岐蓁手作烘培',
+  description: '瀏覽岐蓁手作烘培全部手工麵包，包含歐式麵包、法式糕點、吐司及特色麵包',
 }
 
 export default function MenuPage() {

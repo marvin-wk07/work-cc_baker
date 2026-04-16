@@ -33,7 +33,7 @@ export default function HomePage() {
             <span className="text-amber-500">用心烘焙的溫度</span>
           </h1>
           <p className="text-stone-500 text-lg leading-relaxed mb-10 max-w-xl mx-auto">
-            CC Baker 堅持每日手工製作，使用天然食材，
+            岐蓁手作烘培堅持每日手工製作，使用天然食材，
             為您帶來最純粹的麵包香氣與口感。
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

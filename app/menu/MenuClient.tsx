@@ -71,7 +71,7 @@ export default function MenuClient() {
             {['/menu-p1.jpg', '/menu-p2.jpg'].map((src, i) => (
               <a key={src} href={`${BASE_PATH}${src}`} target="_blank" rel="noopener noreferrer" className="block rounded-2xl overflow-hidden border border-amber-100 shadow-sm hover:shadow-md transition-shadow">
                 <Image
-                  src={src}
+                  src={`${BASE_PATH}${src}`}
                   alt={`菜單第 ${i + 1} 頁`}
                   width={600}
                   height={800}
