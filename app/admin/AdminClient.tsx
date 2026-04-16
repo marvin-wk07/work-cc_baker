@@ -684,9 +684,11 @@ function ShippingDatesTab() {
     return () => unsub()
   }, [])
 
+  const duplicateDate = addForm.date ? dates.find(d => d.date === addForm.date) : null
+
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!addForm.date || !addForm.maxCapacity) return
+    if (!addForm.date || !addForm.maxCapacity || duplicateDate) return
     setSaving(true)
     try {
       await addShippingDate({
@@ -729,23 +731,31 @@ function ShippingDatesTab() {
               <label className="block text-xs font-medium text-stone-600 mb-1">日期 *</label>
               <input type="date" value={addForm.date} min={today}
                 onChange={e => setAddForm(f => ({ ...f, date: e.target.value }))} required
-                className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition" />
+                className={`w-full border rounded-xl px-3 py-2 text-sm text-stone-800 bg-white focus:outline-none transition ${duplicateDate ? 'border-orange-400 focus:border-orange-400' : 'border-stone-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100'}`} />
             </div>
             <div>
               <label className="block text-xs font-medium text-stone-600 mb-1">最大製作能量 *</label>
               <input type="number" value={addForm.maxCapacity} min={1}
                 onChange={e => setAddForm(f => ({ ...f, maxCapacity: e.target.value }))} required
-                className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition" />
+                disabled={!!duplicateDate}
+                className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition disabled:opacity-40" />
             </div>
           </div>
-          <div>
-            <label className="block text-xs font-medium text-stone-600 mb-1">備註（選填，例：限量預購）</label>
-            <input type="text" value={addForm.note} placeholder="例：限量預購、父親節特供"
-              onChange={e => setAddForm(f => ({ ...f, note: e.target.value }))}
-              className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition" />
-          </div>
-          <button type="submit" disabled={saving}
-            className="bg-amber-800 hover:bg-amber-700 disabled:bg-amber-300 text-white font-bold py-2.5 rounded-xl transition-colors text-sm">
+          {duplicateDate && (
+            <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 text-sm text-orange-700">
+              此日期已存在（能量 {duplicateDate.usedCapacity} / {duplicateDate.maxCapacity}），請在下方「即將出貨」列表中點擊「編輯」來修改。
+            </div>
+          )}
+          {!duplicateDate && (
+            <div>
+              <label className="block text-xs font-medium text-stone-600 mb-1">備註（選填，例：限量預購）</label>
+              <input type="text" value={addForm.note} placeholder="例：限量預購、父親節特供"
+                onChange={e => setAddForm(f => ({ ...f, note: e.target.value }))}
+                className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition" />
+            </div>
+          )}
+          <button type="submit" disabled={saving || !!duplicateDate}
+            className="bg-amber-800 hover:bg-amber-700 disabled:bg-amber-300 disabled:cursor-not-allowed text-white font-bold py-2.5 rounded-xl transition-colors text-sm">
             {saving ? '新增中...' : '＋ 新增日期'}
           </button>
         </form>
