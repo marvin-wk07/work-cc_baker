@@ -1,9 +1,9 @@
 import {
   collection,
   addDoc,
-  getDocs,
   doc,
   updateDoc,
+  deleteDoc,
   query,
   orderBy,
   onSnapshot,
@@ -13,7 +13,7 @@ import {
 import { db } from './firebase'
 import { CartItem } from '../context/CartContext'
 
-export type OrderStatus = 'pending' | 'confirmed' | 'ready' | 'completed'
+export type OrderStatus = 'pending' | 'confirmed' | 'ready' | 'completed' | 'cancelled'
 
 export interface Order {
   id: string
@@ -56,6 +56,10 @@ export async function saveOrder(data: {
 
 export async function updateOrderStatus(orderId: string, status: OrderStatus) {
   await updateDoc(doc(db, 'orders', orderId), { status })
+}
+
+export async function deleteOrder(orderId: string) {
+  await deleteDoc(doc(db, 'orders', orderId))
 }
 
 export function subscribeOrders(callback: (orders: Order[]) => void) {

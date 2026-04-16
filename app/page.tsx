@@ -1,8 +1,6 @@
 import Link from 'next/link'
 import ProductCard from './components/ProductCard'
-import { products, featuredIds } from './data/products'
-
-const featured = products.filter(p => featuredIds.includes(p.id))
+import { products } from './data/products'
 
 const features = [
   {
@@ -25,7 +23,7 @@ const features = [
 export default function HomePage() {
   return (
     <div>
-      {/* Hero Section */}
+      {/* Hero */}
       <section className="bg-gradient-to-br from-amber-900 via-amber-800 to-amber-950 text-white py-20 px-4">
         <div className="max-w-3xl mx-auto text-center">
           <p className="text-amber-300 text-sm font-medium tracking-widest uppercase mb-4">
@@ -79,22 +77,19 @@ export default function HomePage() {
               <p className="text-amber-700 text-xs font-semibold tracking-widest uppercase mb-1">Today&apos;s Picks</p>
               <h2 className="text-2xl font-bold text-stone-800">今日精選</h2>
             </div>
-            <Link
-              href="/menu"
-              className="text-sm text-amber-700 hover:text-amber-900 font-medium transition-colors"
-            >
+            <Link href="/menu" className="text-sm text-amber-700 hover:text-amber-900 font-medium transition-colors">
               查看全部 →
             </Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {featured.map(product => (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {products.map(product => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Banner */}
+      {/* CTA */}
       <section className="bg-amber-800 text-white py-12 px-4 text-center">
         <div className="max-w-xl mx-auto">
           <h2 className="text-2xl font-bold mb-3">準備好訂購了嗎？</h2>

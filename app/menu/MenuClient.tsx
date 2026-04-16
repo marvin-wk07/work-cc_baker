@@ -1,20 +1,29 @@
 'use client'
 
-import { useState } from 'react'
-import { products, categories } from '../data/products'
+import { useState, useEffect } from 'react'
+import { products as staticProducts, categories } from '../data/products'
+import { subscribeFirestoreProducts } from '../lib/products'
+import { Product } from '../data/products'
 import ProductCard from '../components/ProductCard'
 
 export default function MenuClient() {
   const [activeCategory, setActiveCategory] = useState('全部')
+  const [firestoreProducts, setFirestoreProducts] = useState<Product[]>([])
+
+  useEffect(() => {
+    const unsub = subscribeFirestoreProducts(setFirestoreProducts)
+    return () => unsub()
+  }, [])
+
+  const allProducts = [...staticProducts, ...firestoreProducts]
 
   const filtered =
     activeCategory === '全部'
-      ? products
-      : products.filter(p => p.category === activeCategory)
+      ? allProducts
+      : allProducts.filter(p => p.category === activeCategory)
 
   return (
     <div>
-      {/* Category Filter */}
       <div className="flex flex-wrap gap-2 mb-8">
         {categories.map(cat => (
           <button
@@ -31,7 +40,6 @@ export default function MenuClient() {
         ))}
       </div>
 
-      {/* Product Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {filtered.map(product => (
           <ProductCard key={product.id} product={product} />
