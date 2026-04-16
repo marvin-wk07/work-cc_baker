@@ -46,7 +46,7 @@ export default function MenuClient() {
           className={`px-5 py-2 rounded-full font-medium text-sm transition-colors ${
             view === 'shop'
               ? 'bg-amber-400 text-white shadow-sm'
-              : 'bg-white text-stone-600 border border-amber-200 hover:bg-amber-50'
+              : 'bg-white text-stone-600 border border-amber-200 hover:bg-orange-50'
           }`}
         >
           🛍️ 選購商品
@@ -56,7 +56,7 @@ export default function MenuClient() {
           className={`px-5 py-2 rounded-full font-medium text-sm transition-colors ${
             view === 'image'
               ? 'bg-amber-400 text-white shadow-sm'
-              : 'bg-white text-stone-600 border border-amber-200 hover:bg-amber-50'
+              : 'bg-white text-stone-600 border border-amber-200 hover:bg-orange-50'
           }`}
         >
           📋 完整菜單圖
@@ -85,7 +85,7 @@ export default function MenuClient() {
         /* ── Shop View ── */
         <div>
           {/* Category Filter */}
-          <div className="flex flex-wrap gap-2 mb-8 sticky top-[57px] bg-amber-50 py-3 z-10 -mx-4 px-4 border-b border-amber-100">
+          <div className="flex flex-wrap gap-2 mb-8 sticky top-[57px] bg-orange-50 py-3 z-10 -mx-4 px-4 border-b border-amber-100">
             {categories.map(cat => (
               <button
                 key={cat}
@@ -93,7 +93,7 @@ export default function MenuClient() {
                 className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
                   activeCategory === cat
                     ? 'bg-amber-400 text-white shadow-sm'
-                    : 'bg-white text-stone-600 hover:bg-amber-50 border border-amber-200'
+                    : 'bg-white text-stone-600 hover:bg-orange-50 border border-amber-200'
                 }`}
               >
                 {cat}

@@ -106,7 +106,7 @@ export default function OrdersClient() {
                   </div>
 
                   {/* Items */}
-                  <ul className="flex flex-col gap-1 border-t border-amber-50 pt-3">
+                  <ul className="flex flex-col gap-1 border-t border-orange-50 pt-3">
                     {order.items.map((item, i) => (
                       <li key={i} className="flex justify-between text-sm">
                         <span className="text-stone-700">{item.name} × {item.quantity}</span>

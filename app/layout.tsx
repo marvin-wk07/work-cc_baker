@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-Hant" className={`${geist.variable} h-full`}>
-      <body className="min-h-full flex flex-col bg-amber-50 text-stone-700">
+      <body className="min-h-full flex flex-col bg-orange-50 text-stone-700">
         <CartProvider>
           <Navbar />
           <main className="flex-1">{children}</main>
