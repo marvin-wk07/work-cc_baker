@@ -43,7 +43,7 @@ export default function CartClient() {
     else if (!/^[0-9+\-\s]{8,15}$/.test(form.phone.trim())) e.phone = '請輸入有效電話號碼'
     if (!selectedShipping) e.date = '請選擇出貨日期'
     if (isOverCapacity) {
-      e.capacity = `所選商品製作能量（${totalCapacity}）超過此日期剩餘產能（${remainingCapacity}），請減少商品數量或選擇其他日期`
+      e.capacity = `所選商品烘培能量（${totalCapacity}）超過此日期剩餘烘培能量（${remainingCapacity}），請減少商品數量或選擇其他日期`
     }
     return e
   }
@@ -116,9 +116,9 @@ export default function CartClient() {
             <h2 className="font-semibold text-stone-800">已選商品 ({totalItems} 件)</h2>
             {selectedShipping && (
               <p className={`text-xs mt-0.5 font-medium ${isOverCapacity ? 'text-red-500' : 'text-stone-400'}`}>
-                製作能量：{totalCapacity}
+                烘培能量：{totalCapacity}
                 {remainingCapacity !== null && (
-                  <span> ／ 剩餘 {remainingCapacity}</span>
+                  <span> ／ 剩餘烘培能量 {remainingCapacity}</span>
                 )}
               </p>
             )}
