@@ -549,6 +549,7 @@ function ProductsTab() {
   const [showSaveGroup, setShowSaveGroup] = useState(false)
   const [groupName, setGroupName] = useState('')
   const [savingGroup, setSavingGroup] = useState(false)
+  const [saveGroupError, setSaveGroupError] = useState('')
   const [confirmDeleteGroup, setConfirmDeleteGroup] = useState<string | null>(null)
 
   useEffect(() => {
@@ -560,10 +561,14 @@ function ProductsTab() {
   const handleSaveGroup = async () => {
     if (!groupName.trim() || selectedIds.size === 0) return
     setSavingGroup(true)
+    setSaveGroupError('')
     try {
       await saveProductGroup(groupName.trim(), [...selectedIds])
       setGroupName('')
       setShowSaveGroup(false)
+    } catch (e) {
+      setSaveGroupError('儲存失敗，請確認 Firestore 規則已更新')
+      console.error(e)
     } finally {
       setSavingGroup(false)
     }
@@ -750,22 +755,25 @@ function ProductsTab() {
               </button>
             )}
             {showSaveGroup && (
-              <div className="flex gap-1 items-center">
-                <input
-                  autoFocus
-                  type="text"
-                  value={groupName}
-                  onChange={e => setGroupName(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') handleSaveGroup(); if (e.key === 'Escape') { setShowSaveGroup(false); setGroupName('') } }}
-                  placeholder="組合名稱"
-                  className="border border-amber-300 rounded-lg px-2 py-1 text-xs text-stone-800 bg-white focus:outline-none focus:border-amber-500 w-28"
-                />
-                <button onClick={handleSaveGroup} disabled={savingGroup || !groupName.trim()}
-                  className="text-xs bg-amber-800 hover:bg-amber-700 disabled:bg-amber-300 text-white px-3 py-1.5 rounded-full transition-colors">
-                  {savingGroup ? '儲存中...' : '儲存'}
-                </button>
-                <button onClick={() => { setShowSaveGroup(false); setGroupName('') }}
-                  className="text-xs bg-stone-200 text-stone-600 px-3 py-1.5 rounded-full">取消</button>
+              <div className="flex flex-col gap-1 items-end">
+                <div className="flex gap-1 items-center">
+                  <input
+                    autoFocus
+                    type="text"
+                    value={groupName}
+                    onChange={e => { setGroupName(e.target.value); setSaveGroupError('') }}
+                    onKeyDown={e => { if (e.key === 'Enter') handleSaveGroup(); if (e.key === 'Escape') { setShowSaveGroup(false); setGroupName(''); setSaveGroupError('') } }}
+                    placeholder="組合名稱"
+                    className="border border-amber-300 rounded-lg px-2 py-1 text-xs text-stone-800 bg-white focus:outline-none focus:border-amber-500 w-28"
+                  />
+                  <button onClick={handleSaveGroup} disabled={savingGroup || !groupName.trim()}
+                    className="text-xs bg-amber-800 hover:bg-amber-700 disabled:bg-amber-300 text-white px-3 py-1.5 rounded-full transition-colors">
+                    {savingGroup ? '儲存中...' : '儲存'}
+                  </button>
+                  <button onClick={() => { setShowSaveGroup(false); setGroupName(''); setSaveGroupError('') }}
+                    className="text-xs bg-stone-200 text-stone-600 px-3 py-1.5 rounded-full">取消</button>
+                </div>
+                {saveGroupError && <p className="text-xs text-red-500">{saveGroupError}</p>}
               </div>
             )}
             {selectedIds.size > 0 && !confirmBulkDelete && !showSaveGroup && (
