@@ -114,7 +114,7 @@ export default function ProductCard({ product }: { product: Product }) {
           )}
           {hasVariants && <div />}
           <span className="text-xs text-stone-400 shrink-0">
-            製作能量 <span className="font-medium text-stone-500">{capacity}</span>
+            烘培能量 <span className="font-medium text-stone-500">{capacity}</span>
           </span>
         </div>
 
