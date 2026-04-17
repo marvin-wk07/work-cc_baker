@@ -129,6 +129,8 @@ function OrdersTab() {
   const [confirmClear, setConfirmClear] = useState(false)
   const [clearing, setClearing] = useState(false)
   const [confirmPermDelete, setConfirmPermDelete] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState<'createdAt' | 'date'>('createdAt')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
   useEffect(() => {
     const unsub1 = subscribeOrders(data => { setOrders(data); setLoading(false) })
@@ -142,7 +144,18 @@ function OrdersTab() {
     finally { setClearing(false) }
   }
 
-  const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter)
+  const baseFiltered = filter === 'all' ? orders : orders.filter(o => o.status === filter)
+  const filtered = [...baseFiltered].sort((a, b) => {
+    let aVal: number, bVal: number
+    if (sortBy === 'date') {
+      aVal = a.date ? new Date(a.date).getTime() : 0
+      bVal = b.date ? new Date(b.date).getTime() : 0
+    } else {
+      aVal = a.createdAt?.seconds ?? 0
+      bVal = b.createdAt?.seconds ?? 0
+    }
+    return sortDir === 'asc' ? aVal - bVal : bVal - aVal
+  })
   const counts = {
     all: orders.length,
     pending: orders.filter(o => o.status === 'pending').length,
@@ -154,7 +167,7 @@ function OrdersTab() {
 
   return (
     <div>
-      <div className="flex gap-2 mb-5 flex-wrap">
+      <div className="flex gap-2 mb-3 flex-wrap">
         {(['all', 'pending', 'confirmed', 'ready', 'completed', 'cancelled'] as const).map(s => (
           <button key={s} onClick={() => setFilter(s)}
             className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${filter === s ? 'bg-amber-800 text-white' : 'bg-white text-stone-600 border border-amber-200 hover:bg-amber-50'}`}>
@@ -164,6 +177,31 @@ function OrdersTab() {
             )}
           </button>
         ))}
+      </div>
+      <div className="flex gap-2 mb-5 items-center">
+        <span className="text-xs text-stone-400">排序：</span>
+        {(['createdAt', 'date'] as const).map(key => {
+          const label = key === 'createdAt' ? '下單時間' : '出貨時間'
+          const isActive = sortBy === key
+          const dir = isActive ? sortDir : 'desc'
+          return (
+            <button
+              key={key}
+              onClick={() => {
+                if (sortBy === key) {
+                  setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+                } else {
+                  setSortBy(key)
+                  setSortDir('desc')
+                }
+              }}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1 ${isActive ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-white text-stone-500 border border-stone-200 hover:bg-stone-50'}`}
+            >
+              {label}
+              <span>{isActive ? (dir === 'desc' ? '↓' : '↑') : '↓'}</span>
+            </button>
+          )
+        })}
       </div>
 
       {loading ? (
