@@ -106,6 +106,18 @@ export async function trashOrder(orderId: string) {
   await batch.commit()
 }
 
+export async function restoreOrder(orderId: string) {
+  const trashRef = doc(db, 'orderTrash', orderId)
+  const orderRef = doc(db, 'orders', orderId)
+  const trashDoc = await getDoc(trashRef)
+  if (!trashDoc.exists()) return
+  const { trashedAt: _, ...data } = trashDoc.data() as Order & { trashedAt: unknown }
+  const batch = writeBatch(db)
+  batch.set(orderRef, data)
+  batch.delete(trashRef)
+  await batch.commit()
+}
+
 export async function permanentDeleteOrder(orderId: string) {
   await deleteDoc(doc(db, 'orderTrash', orderId))
 }

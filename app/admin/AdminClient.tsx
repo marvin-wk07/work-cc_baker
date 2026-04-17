@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, User } from 'firebase/auth'
 import { auth } from '../lib/firebase'
-import { subscribeOrders, subscribeTrashOrders, updateOrderStatus, trashOrder, permanentDeleteOrder, clearAllTrash, Order, OrderStatus } from '../lib/orders'
+import { subscribeOrders, subscribeTrashOrders, updateOrderStatus, trashOrder, restoreOrder, permanentDeleteOrder, clearAllTrash, Order, OrderStatus } from '../lib/orders'
 import {
   subscribeFirestoreProducts,
   addFirestoreProduct,
@@ -130,16 +130,6 @@ function OrdersTab() {
 
   return (
     <div>
-      <div className="grid grid-cols-4 gap-3 mb-5">
-        {(['all', 'pending', 'confirmed', 'ready'] as const).map(s => (
-          <button key={s} onClick={() => setFilter(s)}
-            className={`bg-white rounded-xl p-3 text-center border transition-all ${filter === s ? 'border-amber-400 shadow-sm' : 'border-amber-100 hover:border-amber-200'}`}>
-            <div className="text-2xl font-bold text-amber-900">{counts[s]}</div>
-            <div className="text-xs text-stone-500 mt-0.5">{s === 'all' ? '全部' : STATUS_LABEL[s]}</div>
-          </button>
-        ))}
-      </div>
-
       <div className="flex gap-2 mb-5 flex-wrap">
         {(['all', 'pending', 'confirmed', 'ready', 'completed', 'cancelled'] as const).map(s => (
           <button key={s} onClick={() => setFilter(s)}
@@ -289,7 +279,11 @@ function TrashTab() {
                 </div>
                 <div className="text-right shrink-0">
                   <div className="font-bold text-stone-400 text-lg">NT$ {order.totalPrice}</div>
-                  <div className="flex gap-2 mt-1 justify-end">
+                  <div className="flex gap-2 mt-1 justify-end flex-wrap">
+                    <button onClick={() => restoreOrder(order.id)}
+                      className="text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-1.5 rounded-full transition-colors">
+                      回復訂單
+                    </button>
                     {confirmDelete === order.id ? (
                       <div className="flex gap-1">
                         <button onClick={() => { permanentDeleteOrder(order.id); setConfirmDelete(null) }}
