@@ -5,17 +5,17 @@ const features = [
   {
     icon: '👐',
     title: '純手工製作',
-    desc: '每一條麵包都由師傅親手揉製，不用麵包機，保留最真實的手感與溫度',
+    desc: '每個麵包都親手揉製\n保留最真實的手感與溫度',
   },
   {
     icon: '🌾',
     title: '天然食材',
-    desc: '嚴選無添加麵粉、天然酵母及本地農產，拒絕人工色素與防腐劑',
+    desc: '嚴選無添加麵粉、天然酵母及本地農產\n拒絕人工色素與防腐劑',
   },
   {
     icon: '⏰',
     title: '每日新鮮出爐',
-    desc: '凌晨三點開始製作，確保您每天早晨都能買到最新鮮的麵包',
+    desc: '確保您每天都能享用到最新鮮的麵包',
   },
 ]
 
@@ -57,7 +57,7 @@ export default function HomePage() {
               <div key={f.title} className="text-center px-4">
                 <div className="text-4xl mb-3">{f.icon}</div>
                 <h3 className="font-bold text-stone-700 mb-2">{f.title}</h3>
-                <p className="text-stone-400 text-sm leading-relaxed">{f.desc}</p>
+                <p className="text-stone-400 text-sm leading-relaxed whitespace-pre-line">{f.desc}</p>
               </div>
             ))}
           </div>
