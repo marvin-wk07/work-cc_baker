@@ -26,16 +26,12 @@ export default function HomePage() {
       <section className="bg-gradient-to-br from-orange-300 via-orange-200 to-white py-20 px-4">
         <div className="max-w-3xl mx-auto text-center">
           <p className="text-amber-600 text-sm font-medium tracking-widest uppercase mb-4">
-            Artisan Bakery · 手工烘焙
+            Homemade Bakery · 手工烘焙
           </p>
-          <h1 className="text-4xl sm:text-5xl font-bold leading-tight text-stone-700 mb-6">
-            每一口，都是<br />
-            <span className="text-amber-500">用心烘焙的溫度</span>
+          <h1 className="text-4xl sm:text-5xl font-bold leading-tight text-stone-700 mb-10">
+            有生命的麵包<br />
+            <span className="text-amber-500">新鮮美味即時嚐</span>
           </h1>
-          <p className="text-stone-500 text-lg leading-relaxed mb-10 max-w-xl mx-auto">
-            岐蓁手作烘培堅持每日手工製作，使用天然食材，
-            為您帶來最純粹的麵包香氣與口感。
-          </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/menu"
