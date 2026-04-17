@@ -10,6 +10,10 @@ import {
   updateFirestoreProduct,
   deleteFirestoreProduct,
   seedMenuProducts,
+  saveProductGroup,
+  deleteProductGroup,
+  subscribeProductGroups,
+  ProductGroup,
 } from '../lib/products'
 import {
   subscribeShippingDates,
@@ -541,11 +545,34 @@ function ProductsTab() {
   const [bulkDeleting, setBulkDeleting] = useState(false)
   const [seeding, setSeeding] = useState(false)
   const [seedMsg, setSeedMsg] = useState('')
+  const [groups, setGroups] = useState<ProductGroup[]>([])
+  const [showSaveGroup, setShowSaveGroup] = useState(false)
+  const [groupName, setGroupName] = useState('')
+  const [savingGroup, setSavingGroup] = useState(false)
+  const [confirmDeleteGroup, setConfirmDeleteGroup] = useState<string | null>(null)
 
   useEffect(() => {
-    const unsub = subscribeFirestoreProducts(setProducts)
-    return () => unsub()
+    const unsub1 = subscribeFirestoreProducts(setProducts)
+    const unsub2 = subscribeProductGroups(setGroups)
+    return () => { unsub1(); unsub2() }
   }, [])
+
+  const handleSaveGroup = async () => {
+    if (!groupName.trim() || selectedIds.size === 0) return
+    setSavingGroup(true)
+    try {
+      await saveProductGroup(groupName.trim(), [...selectedIds])
+      setGroupName('')
+      setShowSaveGroup(false)
+    } finally {
+      setSavingGroup(false)
+    }
+  }
+
+  const handleLoadGroup = (group: ProductGroup) => {
+    const validIds = group.productIds.filter(id => products.some(p => p.id === id))
+    setSelectedIds(new Set(validIds))
+  }
 
   const parseForm = (form: FormData) => {
     const parsedVariants = form.variants
@@ -661,6 +688,45 @@ function ProductsTab() {
         )}
       </div>
 
+      {/* Product Groups */}
+      <div className="bg-white rounded-2xl border border-amber-100 p-5 shadow-sm">
+        <h3 className="font-bold text-stone-800 mb-3">商品組合</h3>
+        {groups.length === 0 ? (
+          <p className="text-stone-400 text-sm">尚無儲存的組合。勾選商品後可儲存為組合。</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {groups.map(g => {
+              const validCount = g.productIds.filter(id => products.some(p => p.id === id)).length
+              return (
+                <div key={g.id} className="flex items-center gap-3 px-3 py-2 rounded-xl border border-amber-50 hover:bg-amber-50 transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium text-stone-800 text-sm">{g.name}</span>
+                    <span className="ml-2 text-xs text-stone-400">{validCount} 項商品</span>
+                  </div>
+                  <button onClick={() => handleLoadGroup(g)}
+                    className="text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-1.5 rounded-full transition-colors shrink-0">
+                    載入
+                  </button>
+                  {confirmDeleteGroup === g.id ? (
+                    <div className="flex gap-1 shrink-0">
+                      <button onClick={() => { deleteProductGroup(g.id); setConfirmDeleteGroup(null) }}
+                        className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-full">確認</button>
+                      <button onClick={() => setConfirmDeleteGroup(null)}
+                        className="text-xs bg-stone-200 text-stone-600 px-3 py-1.5 rounded-full">取消</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => setConfirmDeleteGroup(g.id)}
+                      className="text-xs bg-stone-100 hover:bg-red-100 text-stone-400 hover:text-red-500 px-3 py-1.5 rounded-full transition-colors shrink-0">
+                      刪除
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
       {/* Products List */}
       <div className="bg-white rounded-2xl border border-amber-100 p-5 shadow-sm">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
@@ -677,7 +743,32 @@ function ProductsTab() {
                 {selectedIds.size === products.length ? '取消全選' : '全選'}
               </button>
             )}
-            {selectedIds.size > 0 && !confirmBulkDelete && (
+            {selectedIds.size > 0 && !confirmBulkDelete && !showSaveGroup && (
+              <button onClick={() => setShowSaveGroup(true)}
+                className="text-xs bg-amber-800 hover:bg-amber-700 text-white px-3 py-1.5 rounded-full transition-colors font-medium">
+                儲存為組合 ({selectedIds.size})
+              </button>
+            )}
+            {showSaveGroup && (
+              <div className="flex gap-1 items-center">
+                <input
+                  autoFocus
+                  type="text"
+                  value={groupName}
+                  onChange={e => setGroupName(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleSaveGroup(); if (e.key === 'Escape') { setShowSaveGroup(false); setGroupName('') } }}
+                  placeholder="組合名稱"
+                  className="border border-amber-300 rounded-lg px-2 py-1 text-xs text-stone-800 bg-white focus:outline-none focus:border-amber-500 w-28"
+                />
+                <button onClick={handleSaveGroup} disabled={savingGroup || !groupName.trim()}
+                  className="text-xs bg-amber-800 hover:bg-amber-700 disabled:bg-amber-300 text-white px-3 py-1.5 rounded-full transition-colors">
+                  {savingGroup ? '儲存中...' : '儲存'}
+                </button>
+                <button onClick={() => { setShowSaveGroup(false); setGroupName('') }}
+                  className="text-xs bg-stone-200 text-stone-600 px-3 py-1.5 rounded-full">取消</button>
+              </div>
+            )}
+            {selectedIds.size > 0 && !confirmBulkDelete && !showSaveGroup && (
               <button onClick={() => setConfirmBulkDelete(true)}
                 className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-full transition-colors font-medium">
                 刪除選取 ({selectedIds.size})
