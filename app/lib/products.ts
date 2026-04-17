@@ -63,7 +63,8 @@ export interface GroupProduct {
 export interface ProductGroup {
   id: string
   name: string
-  products: GroupProduct[]
+  products?: GroupProduct[]      // new format
+  productIds?: string[]          // old format (backward compat)
 }
 
 export async function saveProductGroup(name: string, products: Product[]) {

@@ -581,16 +581,22 @@ function ProductsTab() {
     setLoadingGroup(true)
     try {
       const newIds: string[] = []
-      for (const gp of group.products) {
-        const existing = products.find(p => p.id === gp.originalId)
-        if (existing) {
-          newIds.push(existing.id)
-        } else {
-          // Product was deleted — re-create it
-          const { originalId: _, ...productData } = gp as GroupProduct & { originalId: string }
-          const newId = await addFirestoreProduct(productData)
-          newIds.push(newId)
+      if (group.products && group.products.length > 0) {
+        // New format: full product data stored
+        for (const gp of group.products) {
+          const existing = products.find(p => p.id === gp.originalId)
+          if (existing) {
+            newIds.push(existing.id)
+          } else {
+            const { originalId: _, ...productData } = gp
+            const newId = await addFirestoreProduct(productData)
+            newIds.push(newId)
+          }
         }
+      } else if (group.productIds) {
+        // Old format: only IDs, select what still exists
+        const validIds = group.productIds.filter(id => products.some(p => p.id === id))
+        validIds.forEach(id => newIds.push(id))
       }
       setSelectedIds(new Set(newIds))
     } finally {
@@ -724,7 +730,7 @@ function ProductsTab() {
                 <div key={g.id} className="flex items-center gap-3 px-3 py-2 rounded-xl border border-amber-50 hover:bg-amber-50 transition-colors">
                   <div className="flex-1 min-w-0">
                     <span className="font-medium text-stone-800 text-sm">{g.name}</span>
-                    <span className="ml-2 text-xs text-stone-400">{g.products.length} 項商品</span>
+                    <span className="ml-2 text-xs text-stone-400">{(g.products ?? g.productIds ?? []).length} 項商品</span>
                   </div>
                   <button onClick={() => handleLoadGroup(g)} disabled={loadingGroup}
                     className="text-xs bg-amber-100 hover:bg-amber-200 disabled:opacity-50 text-amber-800 px-3 py-1.5 rounded-full transition-colors shrink-0">
