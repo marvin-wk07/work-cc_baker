@@ -114,14 +114,12 @@ export default function CartClient() {
         <div className="px-5 py-4 border-b border-amber-100 flex items-center justify-between">
           <div>
             <h2 className="font-semibold text-stone-800">已選商品 ({totalItems} 件)</h2>
-            {selectedShipping && (
-              <p className={`text-xs mt-0.5 font-medium ${isOverCapacity ? 'text-red-500' : 'text-stone-400'}`}>
-                烘培能量：{totalCapacity}
-                {remainingCapacity !== null && (
-                  <span> ／ 剩餘烘培能量 {remainingCapacity}</span>
-                )}
-              </p>
-            )}
+            <p className={`text-xs mt-0.5 font-medium ${isOverCapacity ? 'text-red-500' : 'text-stone-400'}`}>
+              烘培能量：{totalCapacity}
+              {remainingCapacity !== null && (
+                <span> ／ 剩餘烘培能量 {remainingCapacity}</span>
+              )}
+            </p>
           </div>
           <button
             onClick={clearCart}
@@ -275,7 +273,7 @@ export default function CartClient() {
                         : remaining <= sd.maxCapacity * 0.2 ? 'text-orange-500'
                         : 'text-green-600'
                       }`}>
-                        {isFull ? '產能已滿' : `剩餘產能 ${remaining}`}
+                        {isFull ? '烘培能量已滿' : `剩餘烘培能量 ${remaining}`}
                         {!isFull && !cartWouldFit && '（不足）'}
                       </p>
                     </button>
