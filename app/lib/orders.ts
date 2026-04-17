@@ -101,23 +101,26 @@ export async function trashOrder(orderId: string) {
   const trashRef = doc(db, 'orderTrash', orderId)
 
   await runTransaction(db, async (tx) => {
+    // ── All reads first ──
     const orderDoc = await tx.get(orderRef)
     if (!orderDoc.exists()) return
     const data = orderDoc.data()
     const capacity: number = data.totalCapacity ?? 0
     const shippingDateId: string | undefined = data.shippingDateId
 
+    let usedCapacity: number | null = null
+    let dateRef = null
+    if (shippingDateId && capacity > 0) {
+      dateRef = doc(db, 'shippingDates', shippingDateId)
+      const dateDoc = await tx.get(dateRef)
+      if (dateDoc.exists()) usedCapacity = dateDoc.data().usedCapacity ?? 0
+    }
+
+    // ── All writes after ──
     tx.set(trashRef, { ...data, trashedAt: serverTimestamp() })
     tx.delete(orderRef)
-
-    // Restore capacity back to the shipping date
-    if (shippingDateId && capacity > 0) {
-      const dateRef = doc(db, 'shippingDates', shippingDateId)
-      const dateDoc = await tx.get(dateRef)
-      if (dateDoc.exists()) {
-        const used: number = dateDoc.data().usedCapacity ?? 0
-        tx.update(dateRef, { usedCapacity: Math.max(0, used - capacity) })
-      }
+    if (dateRef !== null && usedCapacity !== null) {
+      tx.update(dateRef, { usedCapacity: Math.max(0, usedCapacity - capacity) })
     }
   })
 }
@@ -127,23 +130,26 @@ export async function restoreOrder(orderId: string) {
   const orderRef = doc(db, 'orders', orderId)
 
   await runTransaction(db, async (tx) => {
+    // ── All reads first ──
     const trashDoc = await tx.get(trashRef)
     if (!trashDoc.exists()) return
     const { trashedAt: _, ...data } = trashDoc.data() as Record<string, unknown>
     const capacity: number = (data.totalCapacity as number) ?? 0
     const shippingDateId = data.shippingDateId as string | undefined
 
+    let usedCapacity: number | null = null
+    let dateRef = null
+    if (shippingDateId && capacity > 0) {
+      dateRef = doc(db, 'shippingDates', shippingDateId)
+      const dateDoc = await tx.get(dateRef)
+      if (dateDoc.exists()) usedCapacity = dateDoc.data().usedCapacity ?? 0
+    }
+
+    // ── All writes after ──
     tx.set(orderRef, data)
     tx.delete(trashRef)
-
-    // Add capacity back to the shipping date
-    if (shippingDateId && capacity > 0) {
-      const dateRef = doc(db, 'shippingDates', shippingDateId)
-      const dateDoc = await tx.get(dateRef)
-      if (dateDoc.exists()) {
-        const used: number = dateDoc.data().usedCapacity ?? 0
-        tx.update(dateRef, { usedCapacity: used + capacity })
-      }
+    if (dateRef !== null && usedCapacity !== null) {
+      tx.update(dateRef, { usedCapacity: usedCapacity + capacity })
     }
   })
 }
