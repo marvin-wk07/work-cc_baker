@@ -5,13 +5,13 @@ import { subscribeShippingDates, formatShippingDate, ShippingDate } from '../lib
 
 function CapacityBadge({ remaining, max }: { remaining: number; max: number }) {
   if (max === 0) return null
-  const pct = Math.min(100, ((max - remaining) / max) * 100)
+  const pct = Math.min(100, (remaining / max) * 100)
   const isFull = remaining <= 0
   const isLow = !isFull && remaining <= max * 0.2
 
   const barColor = isFull ? 'bg-rose-300' : isLow ? 'bg-amber-300' : 'bg-emerald-300'
   const textColor = isFull ? 'text-red-400' : isLow ? 'text-amber-600' : 'text-emerald-600'
-  const label = isFull ? '已額滿' : `剩餘製作能量 ${remaining} / ${max}`
+  const label = isFull ? '已額滿' : `剩餘烘培能量 ${remaining} / ${max}`
 
   return (
     <div className="mt-2">
@@ -58,7 +58,7 @@ export default function BakingCalendar() {
         <div className="mb-8">
           <p className="text-amber-500 text-xs font-semibold tracking-widest uppercase mb-1">Baking Schedule</p>
           <h2 className="text-2xl font-bold text-stone-700">烘培月曆</h2>
-          <p className="text-stone-400 text-sm mt-1">即將出貨日期及每日剩餘製作能量</p>
+          <p className="text-stone-400 text-sm mt-1">即將出貨日期及每日剩餘烘培能量</p>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
