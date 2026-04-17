@@ -14,6 +14,7 @@ import {
   deleteProductGroup,
   subscribeProductGroups,
   ProductGroup,
+  GroupProduct,
 } from '../lib/products'
 import {
   subscribeShippingDates,
@@ -550,6 +551,7 @@ function ProductsTab() {
   const [groupName, setGroupName] = useState('')
   const [savingGroup, setSavingGroup] = useState(false)
   const [saveGroupError, setSaveGroupError] = useState('')
+  const [loadingGroup, setLoadingGroup] = useState(false)
   const [confirmDeleteGroup, setConfirmDeleteGroup] = useState<string | null>(null)
 
   useEffect(() => {
@@ -563,7 +565,8 @@ function ProductsTab() {
     setSavingGroup(true)
     setSaveGroupError('')
     try {
-      await saveProductGroup(groupName.trim(), [...selectedIds])
+      const selected = products.filter(p => selectedIds.has(p.id))
+      await saveProductGroup(groupName.trim(), selected)
       setGroupName('')
       setShowSaveGroup(false)
     } catch (e) {
@@ -574,9 +577,25 @@ function ProductsTab() {
     }
   }
 
-  const handleLoadGroup = (group: ProductGroup) => {
-    const validIds = group.productIds.filter(id => products.some(p => p.id === id))
-    setSelectedIds(new Set(validIds))
+  const handleLoadGroup = async (group: ProductGroup) => {
+    setLoadingGroup(true)
+    try {
+      const newIds: string[] = []
+      for (const gp of group.products) {
+        const existing = products.find(p => p.id === gp.originalId)
+        if (existing) {
+          newIds.push(existing.id)
+        } else {
+          // Product was deleted — re-create it
+          const { originalId: _, ...productData } = gp as GroupProduct & { originalId: string }
+          const newId = await addFirestoreProduct(productData)
+          newIds.push(newId)
+        }
+      }
+      setSelectedIds(new Set(newIds))
+    } finally {
+      setLoadingGroup(false)
+    }
   }
 
   const parseForm = (form: FormData) => {
@@ -701,16 +720,15 @@ function ProductsTab() {
         ) : (
           <div className="flex flex-col gap-2">
             {groups.map(g => {
-              const validCount = g.productIds.filter(id => products.some(p => p.id === id)).length
               return (
                 <div key={g.id} className="flex items-center gap-3 px-3 py-2 rounded-xl border border-amber-50 hover:bg-amber-50 transition-colors">
                   <div className="flex-1 min-w-0">
                     <span className="font-medium text-stone-800 text-sm">{g.name}</span>
-                    <span className="ml-2 text-xs text-stone-400">{validCount} 項商品</span>
+                    <span className="ml-2 text-xs text-stone-400">{g.products.length} 項商品</span>
                   </div>
-                  <button onClick={() => handleLoadGroup(g)}
-                    className="text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-1.5 rounded-full transition-colors shrink-0">
-                    載入
+                  <button onClick={() => handleLoadGroup(g)} disabled={loadingGroup}
+                    className="text-xs bg-amber-100 hover:bg-amber-200 disabled:opacity-50 text-amber-800 px-3 py-1.5 rounded-full transition-colors shrink-0">
+                    {loadingGroup ? '載入中...' : '載入'}
                   </button>
                   {confirmDeleteGroup === g.id ? (
                     <div className="flex gap-1 shrink-0">

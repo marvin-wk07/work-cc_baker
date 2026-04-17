@@ -12,11 +12,12 @@ import {
 import { db } from './firebase'
 import { Product, seedProducts } from '../data/products'
 
-export async function addFirestoreProduct(product: Omit<Product, 'id'>) {
+export async function addFirestoreProduct(product: Omit<Product, 'id'>): Promise<string> {
   const data: Record<string, unknown> = { ...product, createdAt: serverTimestamp() }
   // Firestore doesn't accept undefined values
   Object.keys(data).forEach(k => data[k] === undefined && delete data[k])
-  await addDoc(collection(db, 'products'), data)
+  const ref = await addDoc(collection(db, 'products'), data)
+  return ref.id
 }
 
 export async function updateFirestoreProduct(id: string, product: Omit<Product, 'id'>) {
@@ -44,14 +45,46 @@ export function subscribeFirestoreProducts(callback: (products: Product[]) => vo
 
 // ── Product Groups ────────────────────────────────────────────
 
+export interface GroupProduct {
+  originalId: string
+  name: string
+  description: string
+  price: number
+  category: string
+  icon: string
+  bgColor: string
+  variants?: { label: string; price: number }[]
+  addons?: { label: string; price: number }[]
+  minQty?: number
+  maxQty?: number
+  capacity?: number
+}
+
 export interface ProductGroup {
   id: string
   name: string
-  productIds: string[]
+  products: GroupProduct[]
 }
 
-export async function saveProductGroup(name: string, productIds: string[]) {
-  await addDoc(collection(db, 'productGroups'), { name, productIds, createdAt: serverTimestamp() })
+export async function saveProductGroup(name: string, products: Product[]) {
+  const groupProducts: GroupProduct[] = products.map(p => {
+    const gp: GroupProduct = {
+      originalId: p.id,
+      name: p.name,
+      description: p.description,
+      price: p.price,
+      category: p.category,
+      icon: p.icon,
+      bgColor: p.bgColor,
+    }
+    if (p.variants?.length) gp.variants = p.variants
+    if (p.addons?.length) gp.addons = p.addons
+    if (p.minQty !== undefined) gp.minQty = p.minQty
+    if (p.maxQty !== undefined) gp.maxQty = p.maxQty
+    if (p.capacity !== undefined) gp.capacity = p.capacity
+    return gp
+  })
+  await addDoc(collection(db, 'productGroups'), { name, products: groupProducts, createdAt: serverTimestamp() })
 }
 
 export async function deleteProductGroup(groupId: string) {
