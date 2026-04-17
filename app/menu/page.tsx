@@ -11,8 +11,7 @@ export default function MenuPage() {
     <div className="max-w-5xl mx-auto px-4 py-10">
       <div className="mb-8">
         <p className="text-amber-500 text-xs font-semibold tracking-widest uppercase mb-1">Menu</p>
-        <h1 className="text-3xl font-bold text-stone-700 mb-2">今日菜單</h1>
-        <p className="text-stone-500 text-sm">所有麵包均為每日凌晨手工製作，新鮮出爐</p>
+        <h1 className="text-3xl font-bold text-stone-700">今日菜單</h1>
       </div>
       <MenuClient />
     </div>
