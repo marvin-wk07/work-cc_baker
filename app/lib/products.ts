@@ -3,21 +3,68 @@ import {
   addDoc,
   deleteDoc,
   doc,
+  getDoc,
   updateDoc,
   onSnapshot,
   serverTimestamp,
   getDocs,
+  writeBatch,
   deleteField,
 } from 'firebase/firestore'
 import { db } from './firebase'
 import { Product, seedProducts } from '../data/products'
 
 export async function addFirestoreProduct(product: Omit<Product, 'id'>): Promise<string> {
-  const data: Record<string, unknown> = { ...product, createdAt: serverTimestamp() }
+  const data: Record<string, unknown> = { ...product, active: true, createdAt: serverTimestamp() }
   // Firestore doesn't accept undefined values
   Object.keys(data).forEach(k => data[k] === undefined && delete data[k])
   const ref = await addDoc(collection(db, 'products'), data)
   return ref.id
+}
+
+export async function toggleProductActive(id: string, active: boolean) {
+  await updateDoc(doc(db, 'products', id), { active })
+}
+
+export async function trashFirestoreProduct(id: string) {
+  const ref = doc(db, 'products', id)
+  const trashRef = doc(db, 'productTrash', id)
+  const snap = await getDoc(ref)
+  if (!snap.exists()) return
+  const batch = writeBatch(db)
+  batch.set(trashRef, { ...snap.data(), trashedAt: serverTimestamp() })
+  batch.delete(ref)
+  await batch.commit()
+}
+
+export async function restoreFirestoreProduct(id: string) {
+  const trashRef = doc(db, 'productTrash', id)
+  const ref = doc(db, 'products', id)
+  const snap = await getDoc(trashRef)
+  if (!snap.exists()) return
+  const { trashedAt: _, ...data } = snap.data() as Record<string, unknown>
+  const batch = writeBatch(db)
+  batch.set(ref, data)
+  batch.delete(trashRef)
+  await batch.commit()
+}
+
+export async function permanentDeleteFirestoreProduct(id: string) {
+  await deleteDoc(doc(db, 'productTrash', id))
+}
+
+export async function clearProductTrash() {
+  const snapshot = await getDocs(collection(db, 'productTrash'))
+  const batch = writeBatch(db)
+  snapshot.docs.forEach(d => batch.delete(d.ref))
+  await batch.commit()
+}
+
+export function subscribeProductTrash(callback: (products: Product[]) => void) {
+  return onSnapshot(collection(db, 'productTrash'), snapshot => {
+    const products = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Product[]
+    callback(products)
+  })
 }
 
 export async function updateFirestoreProduct(id: string, product: Omit<Product, 'id'>) {
@@ -32,6 +79,7 @@ export async function updateFirestoreProduct(id: string, product: Omit<Product, 
 export async function deleteFirestoreProduct(productId: string) {
   await deleteDoc(doc(db, 'products', productId))
 }
+
 
 export function subscribeFirestoreProducts(callback: (products: Product[]) => void) {
   return onSnapshot(collection(db, 'products'), snapshot => {

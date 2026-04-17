@@ -31,9 +31,10 @@ export default function MenuClient() {
   const categoryNames = firestoreCategories.length > 0 ? firestoreCategories : DEFAULT_CATEGORY_NAMES
   const categories = ['全部', ...categoryNames]
 
-  const allProducts = loaded && firestoreProducts.length > 0
+  const allProducts = (loaded && firestoreProducts.length > 0
     ? firestoreProducts
     : defaultProducts
+  ).filter(p => p.active !== false)
 
   const filtered =
     activeCategory === '全部'

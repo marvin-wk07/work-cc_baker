@@ -12,7 +12,7 @@ export default function FeaturedSection() {
 
   useEffect(() => {
     const unsub = subscribeFirestoreProducts(data => {
-      setProducts(data.slice(0, 3))
+      setProducts(data.filter(p => p.active !== false).slice(0, 3))
       setLoaded(true)
     })
     return () => unsub()

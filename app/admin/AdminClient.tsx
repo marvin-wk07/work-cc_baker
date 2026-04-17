@@ -9,6 +9,12 @@ import {
   addFirestoreProduct,
   updateFirestoreProduct,
   deleteFirestoreProduct,
+  toggleProductActive,
+  trashFirestoreProduct,
+  restoreFirestoreProduct,
+  permanentDeleteFirestoreProduct,
+  clearProductTrash,
+  subscribeProductTrash,
   seedMenuProducts,
   saveProductGroup,
   deleteProductGroup,
@@ -549,6 +555,11 @@ function ProductsTab() {
   const [bulkDeleting, setBulkDeleting] = useState(false)
   const [seeding, setSeeding] = useState(false)
   const [seedMsg, setSeedMsg] = useState('')
+  const [trashProducts, setTrashProducts] = useState<Product[]>([])
+  const [showTrash, setShowTrash] = useState(false)
+  const [confirmClearTrash, setConfirmClearTrash] = useState(false)
+  const [clearingTrash, setClearingTrash] = useState(false)
+  const [confirmPermDelete, setConfirmPermDelete] = useState<string | null>(null)
   const [groups, setGroups] = useState<ProductGroup[]>([])
   const [showSaveGroup, setShowSaveGroup] = useState(false)
   const [groupName, setGroupName] = useState('')
@@ -563,7 +574,8 @@ function ProductsTab() {
     const unsub1 = subscribeFirestoreProducts(setProducts)
     const unsub2 = subscribeProductGroups(setGroups)
     const unsub3 = subscribeCategories(setCategoryList)
-    return () => { unsub1(); unsub2(); unsub3() }
+    const unsub4 = subscribeProductTrash(setTrashProducts)
+    return () => { unsub1(); unsub2(); unsub3(); unsub4() }
   }, [])
 
   const categoryNames = categoryList.length > 0
@@ -657,12 +669,18 @@ function ProductsTab() {
   const handleBulkDelete = async () => {
     setBulkDeleting(true)
     try {
-      await Promise.all([...selectedIds].map(id => deleteFirestoreProduct(id)))
+      await Promise.all([...selectedIds].map(id => trashFirestoreProduct(id)))
       setSelectedIds(new Set())
       setConfirmBulkDelete(false)
     } finally {
       setBulkDeleting(false)
     }
+  }
+
+  const handleClearProductTrash = async () => {
+    setClearingTrash(true)
+    try { await clearProductTrash(); setConfirmClearTrash(false) }
+    finally { setClearingTrash(false) }
   }
 
   const handleSeed = async () => {
@@ -839,78 +857,180 @@ function ProductsTab() {
 
         {seedMsg && <p className="mb-3 text-sm text-stone-600 bg-amber-50 px-3 py-2 rounded-lg">{seedMsg}</p>}
 
-        {products.length === 0 ? (
-          <p className="text-stone-400 text-sm text-center py-6">尚未上架任何商品</p>
-        ) : (() => {
-          // Group products by category, following categoryNames order
-          const allCats = [
-            ...categoryNames.filter(c => products.some(p => p.category === c)),
-            ...Array.from(new Set(products.map(p => p.category).filter(c => !categoryNames.includes(c)))),
-          ]
-          return (
-            <div className="flex flex-col gap-5">
-              {allCats.map(cat => {
-                const catProducts = products.filter(p => p.category === cat)
-                return (
-                  <div key={cat}>
-                    <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest mb-2 flex items-center gap-1">
-                      <span className="w-1 h-3 bg-amber-300 rounded-full inline-block" />{cat}
-                      <span className="ml-1 text-stone-300 font-normal normal-case tracking-normal">{catProducts.length} 項</span>
-                    </p>
-                    <div className="flex flex-col gap-2">
-                      {catProducts.map(product => (
-                        <div key={product.id}>
-                          <div className={`flex items-center gap-3 p-3 border rounded-xl transition-colors ${selectedIds.has(product.id) ? 'border-amber-300 bg-amber-50' : 'border-amber-50 hover:bg-amber-50'}`}>
-                            <input type="checkbox" checked={selectedIds.has(product.id)} onChange={() => toggleSelect(product.id)}
-                              className="w-4 h-4 rounded accent-amber-700 shrink-0 cursor-pointer" />
-                            <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0" style={{ backgroundColor: product.bgColor }}>
-                              {product.icon}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-stone-800 text-sm truncate">{product.name}</p>
-                              <p className="text-xs text-stone-400">NT$ {product.price}</p>
-                            </div>
-                            <div className="flex gap-1 shrink-0">
-                              <button onClick={() => setEditingId(editingId === product.id ? null : product.id)}
-                                className={`text-xs px-3 py-1.5 rounded-full transition-colors ${editingId === product.id ? 'bg-amber-200 text-amber-900' : 'bg-stone-100 hover:bg-amber-100 text-stone-600'}`}>
-                                編輯
-                              </button>
-                              {confirmDelete === product.id ? (
-                                <>
-                                  <button onClick={() => { deleteFirestoreProduct(product.id); setConfirmDelete(null) }}
-                                    className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-full">確認</button>
-                                  <button onClick={() => setConfirmDelete(null)}
-                                    className="text-xs bg-stone-200 text-stone-600 px-3 py-1.5 rounded-full">取消</button>
-                                </>
-                              ) : (
-                                <button onClick={() => setConfirmDelete(product.id)}
-                                  className="text-xs bg-stone-100 hover:bg-red-100 text-stone-500 hover:text-red-500 px-3 py-1.5 rounded-full transition-colors">
-                                  下架
+        {(() => {
+          const activeProducts   = products.filter(p => p.active !== false)
+          const inactiveProducts = products.filter(p => p.active === false)
+
+          const renderProductList = (list: Product[]) => {
+            const allCats = [
+              ...categoryNames.filter(c => list.some(p => p.category === c)),
+              ...Array.from(new Set(list.map(p => p.category).filter(c => !categoryNames.includes(c)))),
+            ]
+            return (
+              <div className="flex flex-col gap-5">
+                {allCats.map(cat => {
+                  const catProducts = list.filter(p => p.category === cat)
+                  return (
+                    <div key={cat}>
+                      <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+                        <span className="w-1 h-3 bg-amber-300 rounded-full inline-block" />{cat}
+                        <span className="ml-1 text-stone-300 font-normal normal-case tracking-normal">{catProducts.length} 項</span>
+                      </p>
+                      <div className="flex flex-col gap-2">
+                        {catProducts.map(product => (
+                          <div key={product.id}>
+                            <div className={`flex items-center gap-3 p-3 border rounded-xl transition-colors ${selectedIds.has(product.id) ? 'border-amber-300 bg-amber-50' : 'border-amber-50 hover:bg-amber-50'}`}>
+                              <input type="checkbox" checked={selectedIds.has(product.id)} onChange={() => toggleSelect(product.id)}
+                                className="w-4 h-4 rounded accent-amber-700 shrink-0 cursor-pointer" />
+                              <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0" style={{ backgroundColor: product.bgColor }}>
+                                {product.icon}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-stone-800 text-sm truncate">{product.name}</p>
+                                <p className="text-xs text-stone-400">NT$ {product.price}</p>
+                              </div>
+                              <div className="flex gap-1 shrink-0 flex-wrap justify-end">
+                                <button onClick={() => setEditingId(editingId === product.id ? null : product.id)}
+                                  className={`text-xs px-3 py-1.5 rounded-full transition-colors ${editingId === product.id ? 'bg-amber-200 text-amber-900' : 'bg-stone-100 hover:bg-amber-100 text-stone-600'}`}>
+                                  編輯
                                 </button>
-                              )}
+                                <button onClick={() => toggleProductActive(product.id, product.active === false)}
+                                  className={`text-xs px-3 py-1.5 rounded-full transition-colors ${product.active === false ? 'bg-green-100 hover:bg-green-200 text-green-700' : 'bg-orange-100 hover:bg-orange-200 text-orange-600'}`}>
+                                  {product.active === false ? '上架' : '下架'}
+                                </button>
+                                {confirmDelete === product.id ? (
+                                  <>
+                                    <button onClick={() => { trashFirestoreProduct(product.id); setConfirmDelete(null) }}
+                                      className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-full">移至垃圾桶</button>
+                                    <button onClick={() => setConfirmDelete(null)}
+                                      className="text-xs bg-stone-200 text-stone-600 px-3 py-1.5 rounded-full">取消</button>
+                                  </>
+                                ) : (
+                                  <button onClick={() => setConfirmDelete(product.id)}
+                                    className="text-xs bg-stone-100 hover:bg-red-100 text-stone-400 hover:text-red-500 px-3 py-1.5 rounded-full transition-colors">
+                                    🗑
+                                  </button>
+                                )}
+                              </div>
                             </div>
+                            {editingId === product.id && (
+                              <div className="mt-2 p-4 border border-amber-200 rounded-xl bg-amber-50">
+                                <ProductForm
+                                  initial={editInitial(product)}
+                                  onSave={(form) => handleEdit(product.id, form)}
+                                  onCancel={() => setEditingId(null)}
+                                  saveLabel="儲存變更"
+                                  categoryNames={categoryNames}
+                                />
+                              </div>
+                            )}
                           </div>
-                          {editingId === product.id && (
-                            <div className="mt-2 p-4 border border-amber-200 rounded-xl bg-amber-50">
-                              <ProductForm
-                                initial={editInitial(product)}
-                                onSave={(form) => handleEdit(product.id, form)}
-                                onCancel={() => setEditingId(null)}
-                                saveLabel="儲存變更"
-                                categoryNames={categoryNames}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
+            )
+          }
+
+          return (
+            <div className="flex flex-col gap-6">
+              {/* 上架中 */}
+              <div>
+                <p className="text-sm font-bold text-stone-700 mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-400 rounded-full inline-block" />上架中
+                  <span className="text-xs font-normal text-stone-400">{activeProducts.length} 項</span>
+                </p>
+                {activeProducts.length === 0
+                  ? <p className="text-stone-400 text-sm text-center py-4">尚無上架商品</p>
+                  : renderProductList(activeProducts)}
+              </div>
+
+              {/* 已下架 */}
+              {inactiveProducts.length > 0 && (
+                <div className="opacity-60">
+                  <p className="text-sm font-bold text-stone-500 mb-3 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-stone-400 rounded-full inline-block" />已下架
+                    <span className="text-xs font-normal text-stone-400">{inactiveProducts.length} 項</span>
+                  </p>
+                  {renderProductList(inactiveProducts)}
+                </div>
+              )}
             </div>
           )
         })()}
       </div>
+
+      {/* 商品垃圾桶 */}
+      {(trashProducts.length > 0 || showTrash) && (
+        <div className="bg-white rounded-2xl border border-stone-100 p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <button onClick={() => setShowTrash(v => !v)}
+              className="text-sm font-bold text-stone-500 flex items-center gap-2 hover:text-stone-700 transition-colors">
+              🗑 商品垃圾桶
+              <span className="text-xs font-normal bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full">{trashProducts.length} 項</span>
+              <span className="text-xs text-stone-400">{showTrash ? '▲' : '▼'}</span>
+            </button>
+            {showTrash && trashProducts.length > 0 && (
+              confirmClearTrash ? (
+                <div className="flex gap-2 items-center">
+                  <span className="text-xs text-red-600 font-medium">確定清空？</span>
+                  <button onClick={handleClearProductTrash} disabled={clearingTrash}
+                    className="text-xs bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white px-3 py-1.5 rounded-full">
+                    {clearingTrash ? '清空中...' : '確認'}
+                  </button>
+                  <button onClick={() => setConfirmClearTrash(false)}
+                    className="text-xs bg-stone-200 text-stone-600 px-3 py-1.5 rounded-full">取消</button>
+                </div>
+              ) : (
+                <button onClick={() => setConfirmClearTrash(true)}
+                  className="text-xs bg-red-100 hover:bg-red-200 text-red-600 px-3 py-1.5 rounded-full transition-colors">
+                  清空垃圾桶
+                </button>
+              )
+            )}
+          </div>
+          {showTrash && (
+            trashProducts.length === 0 ? (
+              <p className="text-stone-400 text-sm text-center py-4">垃圾桶是空的</p>
+            ) : (
+              <div className="flex flex-col gap-2 opacity-70">
+                {trashProducts.map(product => (
+                  <div key={product.id} className="flex items-center gap-3 p-3 border border-stone-100 rounded-xl">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg shrink-0" style={{ backgroundColor: product.bgColor }}>
+                      {product.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-stone-600 text-sm truncate">{product.name}</p>
+                      <p className="text-xs text-stone-400">{product.category} · NT$ {product.price}</p>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <button onClick={() => restoreFirestoreProduct(product.id)}
+                        className="text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-1.5 rounded-full transition-colors">
+                        還原
+                      </button>
+                      {confirmPermDelete === product.id ? (
+                        <>
+                          <button onClick={() => { permanentDeleteFirestoreProduct(product.id); setConfirmPermDelete(null) }}
+                            className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-full">永久刪除</button>
+                          <button onClick={() => setConfirmPermDelete(null)}
+                            className="text-xs bg-stone-200 text-stone-600 px-3 py-1.5 rounded-full">取消</button>
+                        </>
+                      ) : (
+                        <button onClick={() => setConfirmPermDelete(product.id)}
+                          className="text-xs bg-stone-100 hover:bg-red-100 text-stone-400 hover:text-red-500 px-3 py-1.5 rounded-full transition-colors">
+                          永久刪除
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
+        </div>
+      )}
     </div>
   )
 }
