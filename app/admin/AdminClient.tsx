@@ -24,7 +24,8 @@ import {
   formatShippingDate,
   ShippingDate,
 } from '../lib/shippingDates'
-import { Product, categories } from '../data/products'
+import { Product } from '../data/products'
+import { subscribeCategories, addCategory, updateCategory, deleteCategory, DEFAULT_CATEGORY_NAMES, Category } from '../lib/categories'
 
 // ── Constants ────────────────────────────────────────────────
 
@@ -330,11 +331,13 @@ function ProductForm({
   onSave,
   onCancel,
   saveLabel,
+  categoryNames,
 }: {
   initial: FormData
   onSave: (data: FormData) => Promise<void>
   onCancel: () => void
   saveLabel: string
+  categoryNames: string[]
 }) {
   const [form, setForm] = useState<FormData>(initial)
   const [saving, setSaving] = useState(false)
@@ -387,7 +390,7 @@ function ProductForm({
           <label className="block text-xs font-medium text-stone-600 mb-1">分類</label>
           <select value={form.category} onChange={f('category')}
             className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition">
-            {categories.filter(c => c !== '全部').map(c => <option key={c} value={c}>{c}</option>)}
+            {categoryNames.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
         <div>
@@ -554,11 +557,18 @@ function ProductsTab() {
   const [loadingGroup, setLoadingGroup] = useState(false)
   const [confirmDeleteGroup, setConfirmDeleteGroup] = useState<string | null>(null)
 
+  const [categoryList, setCategoryList] = useState<Category[]>([])
+
   useEffect(() => {
     const unsub1 = subscribeFirestoreProducts(setProducts)
     const unsub2 = subscribeProductGroups(setGroups)
-    return () => { unsub1(); unsub2() }
+    const unsub3 = subscribeCategories(setCategoryList)
+    return () => { unsub1(); unsub2(); unsub3() }
   }, [])
+
+  const categoryNames = categoryList.length > 0
+    ? categoryList.map(c => c.name)
+    : DEFAULT_CATEGORY_NAMES
 
   const handleSaveGroup = async () => {
     if (!groupName.trim() || selectedIds.size === 0) return
@@ -714,6 +724,7 @@ function ProductsTab() {
             onSave={handleAdd}
             onCancel={() => setShowAddForm(false)}
             saveLabel="上架商品"
+            categoryNames={categoryNames}
           />
         )}
       </div>
@@ -830,49 +841,212 @@ function ProductsTab() {
 
         {products.length === 0 ? (
           <p className="text-stone-400 text-sm text-center py-6">尚未上架任何商品</p>
+        ) : (() => {
+          // Group products by category, following categoryNames order
+          const allCats = [
+            ...categoryNames.filter(c => products.some(p => p.category === c)),
+            ...Array.from(new Set(products.map(p => p.category).filter(c => !categoryNames.includes(c)))),
+          ]
+          return (
+            <div className="flex flex-col gap-5">
+              {allCats.map(cat => {
+                const catProducts = products.filter(p => p.category === cat)
+                return (
+                  <div key={cat}>
+                    <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+                      <span className="w-1 h-3 bg-amber-300 rounded-full inline-block" />{cat}
+                      <span className="ml-1 text-stone-300 font-normal normal-case tracking-normal">{catProducts.length} 項</span>
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      {catProducts.map(product => (
+                        <div key={product.id}>
+                          <div className={`flex items-center gap-3 p-3 border rounded-xl transition-colors ${selectedIds.has(product.id) ? 'border-amber-300 bg-amber-50' : 'border-amber-50 hover:bg-amber-50'}`}>
+                            <input type="checkbox" checked={selectedIds.has(product.id)} onChange={() => toggleSelect(product.id)}
+                              className="w-4 h-4 rounded accent-amber-700 shrink-0 cursor-pointer" />
+                            <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0" style={{ backgroundColor: product.bgColor }}>
+                              {product.icon}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-stone-800 text-sm truncate">{product.name}</p>
+                              <p className="text-xs text-stone-400">NT$ {product.price}</p>
+                            </div>
+                            <div className="flex gap-1 shrink-0">
+                              <button onClick={() => setEditingId(editingId === product.id ? null : product.id)}
+                                className={`text-xs px-3 py-1.5 rounded-full transition-colors ${editingId === product.id ? 'bg-amber-200 text-amber-900' : 'bg-stone-100 hover:bg-amber-100 text-stone-600'}`}>
+                                編輯
+                              </button>
+                              {confirmDelete === product.id ? (
+                                <>
+                                  <button onClick={() => { deleteFirestoreProduct(product.id); setConfirmDelete(null) }}
+                                    className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-full">確認</button>
+                                  <button onClick={() => setConfirmDelete(null)}
+                                    className="text-xs bg-stone-200 text-stone-600 px-3 py-1.5 rounded-full">取消</button>
+                                </>
+                              ) : (
+                                <button onClick={() => setConfirmDelete(product.id)}
+                                  className="text-xs bg-stone-100 hover:bg-red-100 text-stone-500 hover:text-red-500 px-3 py-1.5 rounded-full transition-colors">
+                                  下架
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          {editingId === product.id && (
+                            <div className="mt-2 p-4 border border-amber-200 rounded-xl bg-amber-50">
+                              <ProductForm
+                                initial={editInitial(product)}
+                                onSave={(form) => handleEdit(product.id, form)}
+                                onCancel={() => setEditingId(null)}
+                                saveLabel="儲存變更"
+                                categoryNames={categoryNames}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })()}
+      </div>
+    </div>
+  )
+}
+
+// ── Categories Tab ───────────────────────────────────────────
+
+function CategoriesTab() {
+  const [cats, setCats] = useState<Category[]>([])
+  const [newName, setNewName] = useState('')
+  const [adding, setAdding] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editName, setEditName] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [seeding, setSeeding] = useState(false)
+
+  useEffect(() => {
+    const unsub = subscribeCategories(setCats)
+    return () => unsub()
+  }, [])
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newName.trim()) return
+    setAdding(true)
+    try {
+      await addCategory(newName.trim(), Date.now())
+      setNewName('')
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  const startEdit = (cat: Category) => {
+    setEditingId(cat.id)
+    setEditName(cat.name)
+  }
+
+  const handleEdit = async (id: string) => {
+    if (!editName.trim()) return
+    setSaving(true)
+    try {
+      await updateCategory(id, editName.trim())
+      setEditingId(null)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSeed = async () => {
+    setSeeding(true)
+    try {
+      for (let i = 0; i < DEFAULT_CATEGORY_NAMES.length; i++) {
+        if (!cats.some(c => c.name === DEFAULT_CATEGORY_NAMES[i])) {
+          await addCategory(DEFAULT_CATEGORY_NAMES[i], i)
+        }
+      }
+    } finally {
+      setSeeding(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Add */}
+      <div className="bg-white rounded-2xl border border-amber-100 p-5 shadow-sm">
+        <h3 className="font-bold text-stone-800 mb-4">新增分類</h3>
+        <form onSubmit={handleAdd} className="flex gap-2">
+          <input
+            type="text" value={newName} onChange={e => setNewName(e.target.value)}
+            placeholder="例：法式甜點" required
+            className="flex-1 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition"
+          />
+          <button type="submit" disabled={adding || !newName.trim()}
+            className="bg-amber-800 hover:bg-amber-700 disabled:bg-amber-300 text-white font-bold px-5 py-2 rounded-xl transition-colors text-sm shrink-0">
+            {adding ? '新增中...' : '＋ 新增'}
+          </button>
+        </form>
+      </div>
+
+      {/* List */}
+      <div className="bg-white rounded-2xl border border-amber-100 p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-stone-800">
+            已建立分類
+            {cats.length > 0 && <span className="ml-2 text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-normal">{cats.length} 個</span>}
+          </h3>
+          {cats.length === 0 && (
+            <button onClick={handleSeed} disabled={seeding}
+              className="text-xs text-amber-700 hover:text-amber-900 font-medium transition-colors border border-amber-200 px-3 py-1.5 rounded-full hover:bg-amber-50">
+              {seeding ? '初始化中...' : '載入預設分類'}
+            </button>
+          )}
+        </div>
+
+        {cats.length === 0 ? (
+          <p className="text-stone-400 text-sm text-center py-6">尚無分類，請新增或載入預設</p>
         ) : (
           <div className="flex flex-col gap-2">
-            {products.map(product => (
-              <div key={product.id}>
-                <div className={`flex items-center gap-3 p-3 border rounded-xl transition-colors ${selectedIds.has(product.id) ? 'border-amber-300 bg-amber-50' : 'border-amber-50 hover:bg-amber-50'}`}>
-                  <input type="checkbox" checked={selectedIds.has(product.id)} onChange={() => toggleSelect(product.id)}
-                    className="w-4 h-4 rounded accent-amber-700 shrink-0 cursor-pointer" />
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0" style={{ backgroundColor: product.bgColor }}>
-                    {product.icon}
+            {cats.map(cat => (
+              <div key={cat.id}>
+                {editingId === cat.id ? (
+                  <div className="flex gap-2 items-center p-2 border border-amber-200 rounded-xl bg-amber-50">
+                    <input
+                      autoFocus type="text" value={editName}
+                      onChange={e => setEditName(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') handleEdit(cat.id); if (e.key === 'Escape') setEditingId(null) }}
+                      className="flex-1 border border-stone-200 rounded-lg px-3 py-1.5 text-sm text-stone-800 bg-white focus:outline-none focus:border-amber-400 transition"
+                    />
+                    <button onClick={() => handleEdit(cat.id)} disabled={saving || !editName.trim()}
+                      className="text-xs bg-amber-800 hover:bg-amber-700 disabled:bg-amber-300 text-white px-3 py-1.5 rounded-full">
+                      {saving ? '儲存...' : '儲存'}
+                    </button>
+                    <button onClick={() => setEditingId(null)}
+                      className="text-xs bg-stone-200 text-stone-600 px-3 py-1.5 rounded-full">取消</button>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-stone-800 text-sm truncate">{product.name}</p>
-                    <p className="text-xs text-stone-400">{product.category} · NT$ {product.price}</p>
-                  </div>
-                  <div className="flex gap-1 shrink-0">
-                    <button onClick={() => setEditingId(editingId === product.id ? null : product.id)}
-                      className={`text-xs px-3 py-1.5 rounded-full transition-colors ${editingId === product.id ? 'bg-amber-200 text-amber-900' : 'bg-stone-100 hover:bg-amber-100 text-stone-600'}`}>
+                ) : (
+                  <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-amber-50 hover:bg-amber-50 transition-colors">
+                    <span className="flex-1 text-sm font-medium text-stone-800">{cat.name}</span>
+                    <button onClick={() => startEdit(cat)}
+                      className="text-xs bg-stone-100 hover:bg-amber-100 text-stone-600 px-3 py-1.5 rounded-full transition-colors shrink-0">
                       編輯
                     </button>
-                    {confirmDelete === product.id ? (
-                      <>
-                        <button onClick={() => { deleteFirestoreProduct(product.id); setConfirmDelete(null) }}
+                    {confirmDelete === cat.id ? (
+                      <div className="flex gap-1 shrink-0">
+                        <button onClick={() => { deleteCategory(cat.id); setConfirmDelete(null) }}
                           className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-full">確認</button>
                         <button onClick={() => setConfirmDelete(null)}
                           className="text-xs bg-stone-200 text-stone-600 px-3 py-1.5 rounded-full">取消</button>
-                      </>
+                      </div>
                     ) : (
-                      <button onClick={() => setConfirmDelete(product.id)}
-                        className="text-xs bg-stone-100 hover:bg-red-100 text-stone-500 hover:text-red-500 px-3 py-1.5 rounded-full transition-colors">
-                        下架
+                      <button onClick={() => setConfirmDelete(cat.id)}
+                        className="text-xs bg-stone-100 hover:bg-red-100 text-stone-400 hover:text-red-500 px-3 py-1.5 rounded-full transition-colors shrink-0">
+                        刪除
                       </button>
                     )}
-                  </div>
-                </div>
-                {/* Inline Edit Form */}
-                {editingId === product.id && (
-                  <div className="mt-2 p-4 border border-amber-200 rounded-xl bg-amber-50">
-                    <ProductForm
-                      initial={editInitial(product)}
-                      onSave={(form) => handleEdit(product.id, form)}
-                      onCancel={() => setEditingId(null)}
-                      saveLabel="儲存變更"
-                    />
                   </div>
                 )}
               </div>
@@ -1082,7 +1256,7 @@ function ShippingDatesTab() {
 // ── Dashboard ────────────────────────────────────────────────
 
 function Dashboard({ user }: { user: User }) {
-  const [tab, setTab] = useState<'orders' | 'products' | 'shipping' | 'trash'>('orders')
+  const [tab, setTab] = useState<'orders' | 'products' | 'categories' | 'shipping' | 'trash'>('orders')
   return (
     <div className="min-h-screen bg-amber-50">
       <header className="bg-amber-950 text-white px-6 py-4 flex items-center justify-between">
@@ -1096,14 +1270,14 @@ function Dashboard({ user }: { user: User }) {
       </header>
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="flex gap-2 mb-6 flex-wrap">
-          {(['orders', 'products', 'shipping', 'trash'] as const).map(t => (
+          {(['orders', 'products', 'categories', 'shipping', 'trash'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
               className={`px-5 py-2 rounded-full font-medium text-sm transition-colors ${tab === t ? (t === 'trash' ? 'bg-stone-600 text-white shadow-sm' : 'bg-amber-800 text-white shadow-sm') : 'bg-white text-stone-600 border border-amber-200 hover:bg-amber-50'}`}>
-              {t === 'orders' ? '訂單管理' : t === 'products' ? '商品管理' : t === 'shipping' ? '出貨日期' : '🗑 垃圾桶'}
+              {t === 'orders' ? '訂單管理' : t === 'products' ? '商品管理' : t === 'categories' ? '分類管理' : t === 'shipping' ? '出貨日期' : '🗑 垃圾桶'}
             </button>
           ))}
         </div>
-        {tab === 'orders' ? <OrdersTab /> : tab === 'products' ? <ProductsTab /> : tab === 'shipping' ? <ShippingDatesTab /> : <TrashTab />}
+        {tab === 'orders' ? <OrdersTab /> : tab === 'products' ? <ProductsTab /> : tab === 'categories' ? <CategoriesTab /> : tab === 'shipping' ? <ShippingDatesTab /> : <TrashTab />}
       </div>
     </div>
   )

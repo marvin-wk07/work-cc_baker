@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { defaultProducts, categories } from '../data/products'
+import { defaultProducts } from '../data/products'
 import { subscribeFirestoreProducts } from '../lib/products'
+import { subscribeCategories, DEFAULT_CATEGORY_NAMES } from '../lib/categories'
 import { Product } from '../data/products'
 import ProductCard from '../components/ProductCard'
 
@@ -14,14 +15,21 @@ export default function MenuClient() {
   const [activeCategory, setActiveCategory] = useState('全部')
   const [firestoreProducts, setFirestoreProducts] = useState<Product[]>([])
   const [loaded, setLoaded] = useState(false)
+  const [firestoreCategories, setFirestoreCategories] = useState<string[]>([])
 
   useEffect(() => {
-    const unsub = subscribeFirestoreProducts(data => {
+    const unsub1 = subscribeFirestoreProducts(data => {
       setFirestoreProducts(data)
       setLoaded(true)
     })
-    return () => unsub()
+    const unsub2 = subscribeCategories(cats => {
+      setFirestoreCategories(cats.map(c => c.name))
+    })
+    return () => { unsub1(); unsub2() }
   }, [])
+
+  const categoryNames = firestoreCategories.length > 0 ? firestoreCategories : DEFAULT_CATEGORY_NAMES
+  const categories = ['全部', ...categoryNames]
 
   const allProducts = loaded && firestoreProducts.length > 0
     ? firestoreProducts
@@ -33,9 +41,10 @@ export default function MenuClient() {
       : allProducts.filter(p => p.category === activeCategory)
 
   // Group by category for the shop view
-  const groupedCategories = categories.filter(c => c !== '全部').filter(cat =>
-    filtered.some(p => p.category === cat)
-  )
+  const groupedCategories = [
+    ...categoryNames.filter(cat => filtered.some(p => p.category === cat)),
+    ...Array.from(new Set(filtered.map(p => p.category).filter(c => !categoryNames.includes(c)))),
+  ]
 
   return (
     <div>

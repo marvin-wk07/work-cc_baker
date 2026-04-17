@@ -36,5 +36,11 @@ service cloud.firestore {
     match /productGroups/{groupId} {
       allow read, write: if request.auth != null;
     }
+
+    // Categories — 所有人可讀（前台菜單用），只有管理員可寫
+    match /categories/{catId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
   }
 }
