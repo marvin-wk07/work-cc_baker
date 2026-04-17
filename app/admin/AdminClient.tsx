@@ -124,11 +124,23 @@ function OrdersTab() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<OrderStatus | 'all'>('all')
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [trashOrders, setTrashOrders] = useState<Order[]>([])
+  const [showTrash, setShowTrash] = useState(false)
+  const [confirmClear, setConfirmClear] = useState(false)
+  const [clearing, setClearing] = useState(false)
+  const [confirmPermDelete, setConfirmPermDelete] = useState<string | null>(null)
 
   useEffect(() => {
-    const unsub = subscribeOrders(data => { setOrders(data); setLoading(false) })
-    return () => unsub()
+    const unsub1 = subscribeOrders(data => { setOrders(data); setLoading(false) })
+    const unsub2 = subscribeTrashOrders(setTrashOrders)
+    return () => { unsub1(); unsub2() }
   }, [])
+
+  const handleClearAll = async () => {
+    setClearing(true)
+    try { await clearAllTrash(); setConfirmClear(false) }
+    finally { setClearing(false) }
+  }
 
   const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter)
   const counts = {
@@ -222,108 +234,82 @@ function OrdersTab() {
           ))}
         </div>
       )}
-    </div>
-  )
-}
 
-// ── Trash Tab ────────────────────────────────────────────────
-
-function TrashTab() {
-  const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
-  const [confirmClear, setConfirmClear] = useState(false)
-  const [clearing, setClearing] = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
-
-  useEffect(() => {
-    const unsub = subscribeTrashOrders(data => { setOrders(data); setLoading(false) })
-    return () => unsub()
-  }, [])
-
-  const handleClearAll = async () => {
-    setClearing(true)
-    try { await clearAllTrash(); setConfirmClear(false) }
-    finally { setClearing(false) }
-  }
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-5">
-        <p className="text-sm text-stone-500">已刪除的訂單暫存於此，可永久清除。</p>
-        {orders.length > 0 && (
-          confirmClear ? (
-            <div className="flex gap-2 items-center">
-              <span className="text-xs text-red-600 font-medium">確定清空全部 {orders.length} 筆？</span>
-              <button onClick={handleClearAll} disabled={clearing}
-                className="text-xs bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white px-3 py-1.5 rounded-full">
-                {clearing ? '清空中...' : '確認清空'}
-              </button>
-              <button onClick={() => setConfirmClear(false)}
-                className="text-xs bg-stone-200 text-stone-600 px-3 py-1.5 rounded-full">取消</button>
-            </div>
-          ) : (
-            <button onClick={() => setConfirmClear(true)}
-              className="text-xs bg-red-100 hover:bg-red-200 text-red-600 px-4 py-1.5 rounded-full font-medium transition-colors">
-              清空垃圾桶
+      {/* 訂單垃圾桶 */}
+      {(trashOrders.length > 0 || showTrash) && (
+        <div className="mt-6 bg-white rounded-2xl border border-stone-100 p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <button onClick={() => setShowTrash(v => !v)}
+              className="text-sm font-bold text-stone-500 flex items-center gap-2 hover:text-stone-700 transition-colors">
+              🗑 訂單垃圾桶
+              <span className="text-xs font-normal bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full">{trashOrders.length} 筆</span>
+              <span className="text-xs text-stone-400">{showTrash ? '▲' : '▼'}</span>
             </button>
-          )
-        )}
-      </div>
-
-      {loading ? (
-        <div className="text-center py-16 text-stone-400">載入中...</div>
-      ) : orders.length === 0 ? (
-        <div className="text-center py-16 text-stone-400">垃圾桶是空的</div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {orders.map(order => (
-            <div key={order.id} className="bg-white rounded-2xl border border-stone-100 p-5 shadow-sm opacity-80">
-              <div className="flex items-start justify-between gap-4 mb-3">
-                <div>
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="font-bold text-stone-600">{order.name}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLOR[order.status]}`}>{STATUS_LABEL[order.status]}</span>
-                  </div>
-                  <div className="text-sm text-stone-400 flex gap-3 flex-wrap">
-                    <span>📞 {order.phone}</span>
-                    <span>📅 出貨：{order.date}</span>
-                  </div>
+            {showTrash && trashOrders.length > 0 && (
+              confirmClear ? (
+                <div className="flex gap-2 items-center">
+                  <span className="text-xs text-red-600 font-medium">確定清空？</span>
+                  <button onClick={handleClearAll} disabled={clearing}
+                    className="text-xs bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white px-3 py-1.5 rounded-full">
+                    {clearing ? '清空中...' : '確認'}
+                  </button>
+                  <button onClick={() => setConfirmClear(false)}
+                    className="text-xs bg-stone-200 text-stone-600 px-3 py-1.5 rounded-full">取消</button>
                 </div>
-                <div className="text-right shrink-0">
-                  <div className="font-bold text-stone-400 text-lg">NT$ {order.totalPrice}</div>
-                  <div className="flex gap-2 mt-1 justify-end flex-wrap">
-                    <button onClick={() => restoreOrder(order.id)}
-                      className="text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-1.5 rounded-full transition-colors">
-                      回復訂單
-                    </button>
-                    {confirmDelete === order.id ? (
-                      <div className="flex gap-1">
-                        <button onClick={() => { permanentDeleteOrder(order.id); setConfirmDelete(null) }}
-                          className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-full">永久刪除</button>
-                        <button onClick={() => setConfirmDelete(null)}
-                          className="text-xs bg-stone-200 text-stone-600 px-3 py-1.5 rounded-full">取消</button>
+              ) : (
+                <button onClick={() => setConfirmClear(true)}
+                  className="text-xs bg-red-100 hover:bg-red-200 text-red-600 px-3 py-1.5 rounded-full transition-colors">
+                  清空垃圾桶
+                </button>
+              )
+            )}
+          </div>
+          {showTrash && (
+            trashOrders.length === 0 ? (
+              <p className="text-stone-400 text-sm text-center py-4">垃圾桶是空的</p>
+            ) : (
+              <div className="flex flex-col gap-3 opacity-75">
+                {trashOrders.map(order => (
+                  <div key={order.id} className="bg-stone-50 rounded-xl border border-stone-100 p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="font-bold text-stone-600 text-sm">{order.name}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLOR[order.status]}`}>{STATUS_LABEL[order.status]}</span>
+                        </div>
+                        <div className="text-xs text-stone-400 flex gap-3 flex-wrap">
+                          <span>📞 {order.phone}</span>
+                          <span>📅 {order.date}</span>
+                        </div>
                       </div>
-                    ) : (
-                      <button onClick={() => setConfirmDelete(order.id)}
-                        className="text-xs bg-stone-100 hover:bg-red-100 text-stone-400 hover:text-red-500 px-3 py-1.5 rounded-full transition-colors">
-                        永久刪除
-                      </button>
-                    )}
+                      <div className="text-right shrink-0">
+                        <div className="font-bold text-stone-400">NT$ {order.totalPrice}</div>
+                        <div className="flex gap-1 mt-1 justify-end flex-wrap">
+                          <button onClick={() => restoreOrder(order.id)}
+                            className="text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-1.5 rounded-full transition-colors">
+                            回復
+                          </button>
+                          {confirmPermDelete === order.id ? (
+                            <div className="flex gap-1">
+                              <button onClick={() => { permanentDeleteOrder(order.id); setConfirmPermDelete(null) }}
+                                className="text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-full">永久刪除</button>
+                              <button onClick={() => setConfirmPermDelete(null)}
+                                className="text-xs bg-stone-200 text-stone-600 px-3 py-1.5 rounded-full">取消</button>
+                            </div>
+                          ) : (
+                            <button onClick={() => setConfirmPermDelete(order.id)}
+                              className="text-xs bg-stone-100 hover:bg-red-100 text-stone-400 hover:text-red-500 px-3 py-1.5 rounded-full transition-colors">
+                              永久刪除
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
-              <div className="border-t border-stone-50 pt-3">
-                <ul className="flex flex-col gap-1">
-                  {order.items.map((item, i) => (
-                    <li key={i} className="flex justify-between text-sm">
-                      <span className="text-stone-500">{item.name} × {item.quantity}</span>
-                      <span className="text-stone-400">NT$ {item.price * item.quantity}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          ))}
+            )
+          )}
         </div>
       )}
     </div>
@@ -1376,7 +1362,7 @@ function ShippingDatesTab() {
 // ── Dashboard ────────────────────────────────────────────────
 
 function Dashboard({ user }: { user: User }) {
-  const [tab, setTab] = useState<'orders' | 'products' | 'categories' | 'shipping' | 'trash'>('orders')
+  const [tab, setTab] = useState<'orders' | 'products' | 'categories' | 'shipping'>('orders')
   return (
     <div className="min-h-screen bg-amber-50">
       <header className="bg-amber-950 text-white px-6 py-4 flex items-center justify-between">
@@ -1390,14 +1376,14 @@ function Dashboard({ user }: { user: User }) {
       </header>
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="flex gap-2 mb-6 flex-wrap">
-          {(['orders', 'products', 'categories', 'shipping', 'trash'] as const).map(t => (
+          {(['orders', 'products', 'categories', 'shipping'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)}
-              className={`px-5 py-2 rounded-full font-medium text-sm transition-colors ${tab === t ? (t === 'trash' ? 'bg-stone-600 text-white shadow-sm' : 'bg-amber-800 text-white shadow-sm') : 'bg-white text-stone-600 border border-amber-200 hover:bg-amber-50'}`}>
-              {t === 'orders' ? '訂單管理' : t === 'products' ? '商品管理' : t === 'categories' ? '分類管理' : t === 'shipping' ? '出貨日期' : '🗑 垃圾桶'}
+              className={`px-5 py-2 rounded-full font-medium text-sm transition-colors ${tab === t ? 'bg-amber-800 text-white shadow-sm' : 'bg-white text-stone-600 border border-amber-200 hover:bg-amber-50'}`}>
+              {t === 'orders' ? '訂單管理' : t === 'products' ? '商品管理' : t === 'categories' ? '分類管理' : '出貨日期'}
             </button>
           ))}
         </div>
-        {tab === 'orders' ? <OrdersTab /> : tab === 'products' ? <ProductsTab /> : tab === 'categories' ? <CategoriesTab /> : tab === 'shipping' ? <ShippingDatesTab /> : <TrashTab />}
+        {tab === 'orders' ? <OrdersTab /> : tab === 'products' ? <ProductsTab /> : tab === 'categories' ? <CategoriesTab /> : <ShippingDatesTab />}
       </div>
     </div>
   )
