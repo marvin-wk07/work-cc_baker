@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDoc,
   updateDoc,
   deleteDoc,
   query,
@@ -8,6 +9,7 @@ import {
   orderBy,
   onSnapshot,
   getDocs,
+  writeBatch,
   runTransaction,
   serverTimestamp,
   Timestamp,
@@ -93,8 +95,34 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
   await updateDoc(doc(db, 'orders', orderId), { status })
 }
 
-export async function deleteOrder(orderId: string) {
-  await deleteDoc(doc(db, 'orders', orderId))
+export async function trashOrder(orderId: string) {
+  const orderRef = doc(db, 'orders', orderId)
+  const trashRef = doc(db, 'orderTrash', orderId)
+  const orderDoc = await getDoc(orderRef)
+  if (!orderDoc.exists()) return
+  const batch = writeBatch(db)
+  batch.set(trashRef, { ...orderDoc.data(), trashedAt: serverTimestamp() })
+  batch.delete(orderRef)
+  await batch.commit()
+}
+
+export async function permanentDeleteOrder(orderId: string) {
+  await deleteDoc(doc(db, 'orderTrash', orderId))
+}
+
+export async function clearAllTrash() {
+  const snapshot = await getDocs(collection(db, 'orderTrash'))
+  const batch = writeBatch(db)
+  snapshot.docs.forEach(d => batch.delete(d.ref))
+  await batch.commit()
+}
+
+export function subscribeTrashOrders(callback: (orders: Order[]) => void) {
+  const q = query(collection(db, 'orderTrash'), orderBy('trashedAt', 'desc'))
+  return onSnapshot(q, snapshot => {
+    const orders = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Order[]
+    callback(orders)
+  })
 }
 
 export async function getOrdersByPhone(phone: string): Promise<Order[]> {

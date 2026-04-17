@@ -83,6 +83,13 @@ export default function HomePage() {
           </Link>
         </div>
       </section>
+
+      {/* Admin Link */}
+      <div className="py-4 text-center">
+        <Link href="/admin" className="text-xs text-stone-300 hover:text-stone-500 transition-colors">
+          管理後台
+        </Link>
+      </div>
     </div>
   )
 }
