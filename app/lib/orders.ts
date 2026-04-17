@@ -28,6 +28,7 @@ export interface Order {
   note: string
   items: { productId: string; name: string; price: number; quantity: number }[]
   totalPrice: number
+  totalCapacity?: number
   status: OrderStatus
   createdAt: Timestamp | null
 }
@@ -98,24 +99,53 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
 export async function trashOrder(orderId: string) {
   const orderRef = doc(db, 'orders', orderId)
   const trashRef = doc(db, 'orderTrash', orderId)
-  const orderDoc = await getDoc(orderRef)
-  if (!orderDoc.exists()) return
-  const batch = writeBatch(db)
-  batch.set(trashRef, { ...orderDoc.data(), trashedAt: serverTimestamp() })
-  batch.delete(orderRef)
-  await batch.commit()
+
+  await runTransaction(db, async (tx) => {
+    const orderDoc = await tx.get(orderRef)
+    if (!orderDoc.exists()) return
+    const data = orderDoc.data()
+    const capacity: number = data.totalCapacity ?? 0
+    const shippingDateId: string | undefined = data.shippingDateId
+
+    tx.set(trashRef, { ...data, trashedAt: serverTimestamp() })
+    tx.delete(orderRef)
+
+    // Restore capacity back to the shipping date
+    if (shippingDateId && capacity > 0) {
+      const dateRef = doc(db, 'shippingDates', shippingDateId)
+      const dateDoc = await tx.get(dateRef)
+      if (dateDoc.exists()) {
+        const used: number = dateDoc.data().usedCapacity ?? 0
+        tx.update(dateRef, { usedCapacity: Math.max(0, used - capacity) })
+      }
+    }
+  })
 }
 
 export async function restoreOrder(orderId: string) {
   const trashRef = doc(db, 'orderTrash', orderId)
   const orderRef = doc(db, 'orders', orderId)
-  const trashDoc = await getDoc(trashRef)
-  if (!trashDoc.exists()) return
-  const { trashedAt: _, ...data } = trashDoc.data() as Order & { trashedAt: unknown }
-  const batch = writeBatch(db)
-  batch.set(orderRef, data)
-  batch.delete(trashRef)
-  await batch.commit()
+
+  await runTransaction(db, async (tx) => {
+    const trashDoc = await tx.get(trashRef)
+    if (!trashDoc.exists()) return
+    const { trashedAt: _, ...data } = trashDoc.data() as Record<string, unknown>
+    const capacity: number = (data.totalCapacity as number) ?? 0
+    const shippingDateId = data.shippingDateId as string | undefined
+
+    tx.set(orderRef, data)
+    tx.delete(trashRef)
+
+    // Add capacity back to the shipping date
+    if (shippingDateId && capacity > 0) {
+      const dateRef = doc(db, 'shippingDates', shippingDateId)
+      const dateDoc = await tx.get(dateRef)
+      if (dateDoc.exists()) {
+        const used: number = dateDoc.data().usedCapacity ?? 0
+        tx.update(dateRef, { usedCapacity: used + capacity })
+      }
+    }
+  })
 }
 
 export async function permanentDeleteOrder(orderId: string) {
