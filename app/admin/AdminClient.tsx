@@ -516,7 +516,7 @@ function ProductForm({
             className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition" />
         </div>
         <div>
-          <label className="block text-xs font-medium text-stone-600 mb-1">製作能量（選填）</label>
+          <label className="block text-xs font-medium text-stone-600 mb-1">烘培能量（選填）</label>
           <input type="number" value={form.capacity} min={1} placeholder="預設 10"
             onChange={e => setForm(prev => ({ ...prev, capacity: e.target.value }))}
             className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white placeholder:text-stone-400 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition" />
@@ -1269,7 +1269,7 @@ function ShippingDatesTab() {
                 className={`w-full border rounded-xl px-3 py-2 text-sm text-stone-800 bg-white focus:outline-none transition ${duplicateDate ? 'border-orange-400 focus:border-orange-400' : 'border-stone-200 focus:border-amber-400 focus:ring-2 focus:ring-amber-100'}`} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-stone-600 mb-1">最大製作能量 *</label>
+              <label className="block text-xs font-medium text-stone-600 mb-1">最大烘培能量 *</label>
               <input type="number" value={addForm.maxCapacity} min={1}
                 onChange={e => setAddForm(f => ({ ...f, maxCapacity: e.target.value }))} required
                 disabled={!!duplicateDate}
@@ -1351,7 +1351,7 @@ function ShippingDatesTab() {
                   {editingId === d.id && (
                     <div className="mt-2 p-4 border border-amber-200 rounded-xl bg-amber-50 flex gap-3 items-end">
                       <div>
-                        <label className="block text-xs font-medium text-stone-600 mb-1">最大製作能量</label>
+                        <label className="block text-xs font-medium text-stone-600 mb-1">最大烘培能量</label>
                         <input type="number" value={editForm.maxCapacity} min={d.usedCapacity || 1}
                           onChange={e => setEditForm(f => ({ ...f, maxCapacity: e.target.value }))}
                           className="w-24 border border-stone-200 rounded-xl px-3 py-2 text-sm text-stone-800 bg-white focus:outline-none focus:border-amber-400 transition" />

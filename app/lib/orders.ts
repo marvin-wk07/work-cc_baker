@@ -72,7 +72,7 @@ export async function saveOrder(data: {
     const usedCapacity: number = raw.usedCapacity ?? raw.orderCount ?? 0
 
     if (usedCapacity + orderCapacity > maxCapacity) {
-      throw new Error('此出貨日期製作能量已不足，請選擇其他日期或減少商品數量')
+      throw new Error('此出貨日期烘培能量已不足，請選擇其他日期或減少商品數量')
     }
 
     transaction.set(orderRef, {

@@ -19,7 +19,7 @@ interface CartContextType {
   clearCart: () => void
   totalItems: number
   totalPrice: number
-  totalCapacity: number  // 購物車總製作能量
+  totalCapacity: number  // 購物車總烘培能量
 }
 
 function makeCartKey(productId: string, variantLabel?: string, addonLabel?: string): string {

@@ -20,7 +20,7 @@ export interface Product {
   addons?: ProductAddon[]
   minQty?: number      // minimum quantity per order (default 1)
   maxQty?: number      // maximum quantity per order (undefined = unlimited)
-  capacity?: number    // 製作能量，用於估算每日產能（預設 1）
+  capacity?: number    // 烘培能量，用於估算每日產能（預設 1）
   active?: boolean     // false = 下架，undefined/true = 上架
 }
 

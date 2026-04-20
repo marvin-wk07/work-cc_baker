@@ -4,8 +4,8 @@ import { db } from './firebase'
 export interface ShippingDate {
   id: string
   date: string          // "YYYY-MM-DD"
-  maxCapacity: number   // 每日最大製作能量
-  usedCapacity: number  // 已使用製作能量
+  maxCapacity: number   // 每日最大烘培能量
+  usedCapacity: number  // 已使用烘培能量
   note: string
 }
 
