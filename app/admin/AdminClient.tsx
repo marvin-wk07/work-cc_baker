@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, User } from 'firebase/auth'
 import { auth } from '../lib/firebase'
 import { subscribeOrders, subscribeTrashOrders, updateOrderStatus, resetOrderToPending, trashOrder, restoreOrder, permanentDeleteOrder, clearAllTrash, Order, OrderStatus } from '../lib/orders'
@@ -19,6 +19,7 @@ import {
   saveProductGroup,
   deleteProductGroup,
   subscribeProductGroups,
+  uploadProductIcon,
   ProductGroup,
   GroupProduct,
 } from '../lib/products'
@@ -377,6 +378,23 @@ function ProductForm({
 }) {
   const [form, setForm] = useState<FormData>(initial)
   const [saving, setSaving] = useState(false)
+  const [imageUploading, setImageUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImageUploading(true)
+    try {
+      const url = await uploadProductIcon(file)
+      setForm(f => ({ ...f, icon: url }))
+    } catch (err) {
+      console.error('圖片上傳失敗', err)
+    } finally {
+      setImageUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
 
   const f = (key: keyof Omit<FormData, 'variants'>) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setForm(prev => ({ ...prev, [key]: e.target.value }))
@@ -431,14 +449,29 @@ function ProductForm({
         </div>
         <div>
           <label className="block text-xs font-medium text-stone-600 mb-1">圖示</label>
-          <div className="flex flex-wrap gap-1">
-            {ICON_OPTIONS.map(icon => (
-              <button key={icon} type="button" onClick={() => setForm(f => ({ ...f, icon }))}
-                className={`w-8 h-8 text-lg rounded-lg flex items-center justify-center transition-colors ${form.icon === icon ? 'bg-amber-200 ring-2 ring-amber-400' : 'bg-stone-100 hover:bg-amber-100'}`}>
-                {icon}
+          {form.icon.startsWith('http') ? (
+            <div className="flex items-center gap-3 mb-1">
+              <img src={form.icon} alt="圖示" className="w-12 h-12 object-cover rounded-xl border border-stone-200" />
+              <button type="button" onClick={() => setForm(f => ({ ...f, icon: ICON_OPTIONS[0] }))}
+                className="text-xs text-red-400 hover:text-red-600 transition-colors">
+                移除圖片
               </button>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-1 mb-1">
+              {ICON_OPTIONS.map(icon => (
+                <button key={icon} type="button" onClick={() => setForm(f => ({ ...f, icon }))}
+                  className={`w-8 h-8 text-lg rounded-lg flex items-center justify-center transition-colors ${form.icon === icon ? 'bg-amber-200 ring-2 ring-amber-400' : 'bg-stone-100 hover:bg-amber-100'}`}>
+                  {icon}
+                </button>
+              ))}
+            </div>
+          )}
+          <label className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full cursor-pointer transition-colors ${imageUploading ? 'bg-stone-100 text-stone-400 cursor-not-allowed' : 'bg-stone-100 hover:bg-amber-100 text-stone-600 hover:text-amber-800'}`}>
+            {imageUploading ? '上傳中...' : '📷 上傳圖片'}
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+              disabled={imageUploading} onChange={handleImageUpload} />
+          </label>
         </div>
         <div>
           <label className="block text-xs font-medium text-stone-600 mb-1">背景色</label>
@@ -531,8 +564,11 @@ function ProductForm({
 
       {/* Preview */}
       <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0" style={{ backgroundColor: form.bgColor }}>
-          {form.icon}
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 overflow-hidden"
+          style={{ backgroundColor: form.icon.startsWith('http') ? undefined : form.bgColor }}>
+          {form.icon.startsWith('http')
+            ? <img src={form.icon} alt="" className="w-full h-full object-cover" />
+            : form.icon}
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-medium text-stone-800 text-sm">{form.name || '商品名稱'}</p>
@@ -912,8 +948,11 @@ function ProductsTab() {
                             <div className={`flex items-center gap-3 p-3 border rounded-xl transition-colors ${selectedIds.has(product.id) ? 'border-amber-300 bg-amber-50' : 'border-amber-50 hover:bg-amber-50'}`}>
                               <input type="checkbox" checked={selectedIds.has(product.id)} onChange={() => toggleSelect(product.id)}
                                 className="w-4 h-4 rounded accent-amber-700 shrink-0 cursor-pointer" />
-                              <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0" style={{ backgroundColor: product.bgColor }}>
-                                {product.icon}
+                              <div className="w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0 overflow-hidden"
+                                style={{ backgroundColor: product.icon.startsWith('http') ? undefined : product.bgColor }}>
+                                {product.icon.startsWith('http')
+                                  ? <img src={product.icon} alt={product.name} className="w-full h-full object-cover" />
+                                  : product.icon}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium text-stone-800 text-sm truncate">{product.name}</p>
@@ -1028,8 +1067,11 @@ function ProductsTab() {
               <div className="flex flex-col gap-2 opacity-70">
                 {trashProducts.map(product => (
                   <div key={product.id} className="flex items-center gap-3 p-3 border border-stone-100 rounded-xl">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg shrink-0" style={{ backgroundColor: product.bgColor }}>
-                      {product.icon}
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg shrink-0 overflow-hidden"
+                      style={{ backgroundColor: product.icon.startsWith('http') ? undefined : product.bgColor }}>
+                      {product.icon.startsWith('http')
+                        ? <img src={product.icon} alt={product.name} className="w-full h-full object-cover" />
+                        : product.icon}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-stone-600 text-sm truncate">{product.name}</p>

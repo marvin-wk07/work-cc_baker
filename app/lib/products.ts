@@ -11,8 +11,16 @@ import {
   writeBatch,
   deleteField,
 } from 'firebase/firestore'
-import { db } from './firebase'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { db, storage } from './firebase'
 import { Product, seedProducts } from '../data/products'
+
+export async function uploadProductIcon(file: File): Promise<string> {
+  const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, '_')
+  const storageRef = ref(storage, `productIcons/${Date.now()}_${safeName}`)
+  const snapshot = await uploadBytes(storageRef, file)
+  return getDownloadURL(snapshot.ref)
+}
 
 export async function addFirestoreProduct(product: Omit<Product, 'id'>): Promise<string> {
   const data: Record<string, unknown> = { ...product, active: true, createdAt: serverTimestamp() }

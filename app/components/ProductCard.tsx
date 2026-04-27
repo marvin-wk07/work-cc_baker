@@ -35,10 +35,12 @@ export default function ProductCard({ product }: { product: Product }) {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-amber-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
       <div
-        className="h-28 flex items-center justify-center text-5xl"
-        style={{ backgroundColor: product.bgColor }}
+        className="h-28 flex items-center justify-center text-5xl overflow-hidden"
+        style={{ backgroundColor: product.icon.startsWith('http') ? undefined : product.bgColor }}
       >
-        {product.icon}
+        {product.icon.startsWith('http')
+          ? <img src={product.icon} alt={product.name} className="w-full h-full object-cover" />
+          : product.icon}
       </div>
       <div className="p-3 flex flex-col flex-1 gap-2">
         <div className="flex items-start justify-between gap-1">
