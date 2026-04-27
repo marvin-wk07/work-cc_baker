@@ -96,6 +96,10 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
   await updateDoc(doc(db, 'orders', orderId), { status })
 }
 
+export async function resetOrderToPending(orderId: string) {
+  await updateDoc(doc(db, 'orders', orderId), { status: 'pending' as OrderStatus })
+}
+
 export async function trashOrder(orderId: string) {
   const orderRef = doc(db, 'orders', orderId)
   const trashRef = doc(db, 'orderTrash', orderId)

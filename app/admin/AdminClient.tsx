@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged, User } from 'firebase/auth'
 import { auth } from '../lib/firebase'
-import { subscribeOrders, subscribeTrashOrders, updateOrderStatus, trashOrder, restoreOrder, permanentDeleteOrder, clearAllTrash, Order, OrderStatus } from '../lib/orders'
+import { subscribeOrders, subscribeTrashOrders, updateOrderStatus, resetOrderToPending, trashOrder, restoreOrder, permanentDeleteOrder, clearAllTrash, Order, OrderStatus } from '../lib/orders'
 import {
   subscribeFirestoreProducts,
   addFirestoreProduct,
@@ -239,6 +239,12 @@ function OrdersTab() {
                       <button onClick={() => updateOrderStatus(order.id, 'cancelled')}
                         className="text-xs bg-red-100 hover:bg-red-200 text-red-600 px-3 py-1.5 rounded-full transition-colors">
                         取消
+                      </button>
+                    )}
+                    {order.status !== 'pending' && (
+                      <button onClick={() => resetOrderToPending(order.id)}
+                        className="text-xs bg-stone-100 hover:bg-amber-100 text-stone-500 hover:text-amber-800 px-3 py-1.5 rounded-full transition-colors">
+                        重置
                       </button>
                     )}
                     {confirmDelete === order.id ? (
